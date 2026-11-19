@@ -1,5 +1,7 @@
 package de.cbrachem.staticopenapi;
 
+import com.fasterxml.jackson.databind.AnnotationIntrospector;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.module.kotlin.KotlinModule;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverterContext;
@@ -29,10 +31,21 @@ final class Schemas {
             "org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody");
 
     static {
+        var mapper = Json.mapper();
         // With this module Jackson marks non-nullable Kotlin properties as required.
-        Json.mapper().registerModule(new KotlinModule.Builder().build());
-        ModelConverters.getInstance().addConverter(new KotlinModelConverter());
-        ModelConverters.getInstance().addConverter(new NullnessModelConverter());
+        mapper.registerModule(new KotlinModule.Builder().build());
+        mapper.setAnnotationIntrospectors(
+                AnnotationIntrospector.pair(
+                        mapper.getSerializationConfig().getAnnotationIntrospector(), Jackson3Bridge.introspector()),
+                AnnotationIntrospector.pair(
+                        mapper.getDeserializationConfig().getAnnotationIntrospector(), Jackson3Bridge.introspector()));
+        // Jackson 3 default
+        mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
+
+        var converters = ModelConverters.getInstance();
+        converters.addConverter(new KotlinModelConverter());
+        converters.addConverter(new NullnessModelConverter());
+        converters.addConverter(new Jackson3Bridge());
     }
 
     private Schemas() {}

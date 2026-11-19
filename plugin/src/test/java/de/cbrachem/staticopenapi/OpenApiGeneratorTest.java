@@ -83,7 +83,19 @@ class OpenApiGeneratorTest {
                 .extracting(Parameter::getName, Parameter::getRequired)
                 .containsExactly(tuple("name", true), tuple("email", false));
         Schema<?> owner = jspecify.getComponents().getSchemas().get("Owner");
-        assertThat(owner.getRequired()).containsExactlyInAnyOrder("name", "phones");
+        assertThat(owner.getRequired()).containsExactlyInAnyOrder("name", "phones", "age");
         assertThat(jspecify.getComponents().getSchemas().get("LegacyOwner").getRequired()).isNull();
+    }
+
+    @Test
+    void appliesJackson3AnnotationsAndDefaults() {
+        var jackson3 = OpenApiGenerator.generate(
+                List.of(Fixtures.OwnerController.class), new GeneratorConfig("Owners", "1.0", null));
+
+        Schema<?> shipment = jackson3.getComponents().getSchemas().get("Shipment");
+        assertThat(shipment.getProperties()).containsOnlyKeys("tracking_code", "parcel_count", "priority", "sender");
+        assertThat(shipment.getRequired()).containsExactly("parcel_count");
+        assertThat(shipment.getProperties().get("priority").getEnum()).extracting(Object::toString).containsExactly("low", "high");
+        assertThat(shipment.getProperties().get("sender").get$ref()).isEqualTo("#/components/schemas/Owner");
     }
 }

@@ -43,7 +43,33 @@ public final class Fixtures {
     @NullMarked
     public record Owner(String name, @Nullable String email, List<String> phones, int age) {}
 
+    @tools.jackson.databind.annotation.JsonNaming(tools.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy.class)
+    public record Shipment(
+            String trackingCode,
+            int parcelCount,
+            Priority priority,
+            @tools.jackson.databind.annotation.JsonSerialize(as = Owner.class) Object sender) {}
+
+    public enum Priority {
+        LOW, HIGH;
+
+        @Override
+        public String toString() {
+            return name().toLowerCase();
+        }
+    }
+
     public static class LegacyOwner {
+        private int age;
+
+        public int getAge() {
+            return age;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
+
         public String getName() {
             return "";
         }
@@ -54,6 +80,11 @@ public final class Fixtures {
     public static class OwnerController {
         @GetMapping("/owners")
         public List<Owner> search(@RequestParam String name, @RequestParam @Nullable String email) {
+            return List.of();
+        }
+
+        @GetMapping("/shipments")
+        public List<Shipment> shipments() {
             return List.of();
         }
 

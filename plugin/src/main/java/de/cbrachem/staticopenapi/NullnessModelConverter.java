@@ -1,5 +1,6 @@
 package de.cbrachem.staticopenapi;
 
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverter;
@@ -10,12 +11,13 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Stream;
 import org.springframework.core.KotlinDetector;
 import org.springframework.core.Nullness;
 
 /**
- * Marks a property of a Java class as required when its type is non-null, for example in JSpecify
- * {@code @NullMarked} code. Primitive properties stay as they are, because Jackson gives them a default value.
+ * Marks a property of a Java class as required when its type is a non-null reference, for example in JSpecify
+ * {@code @NullMarked} code, or when it is a primitive creator parameter.
  */
 final class NullnessModelConverter implements ModelConverter {
 
@@ -30,9 +32,7 @@ final class NullnessModelConverter implements ModelConverter {
         if (!KotlinDetector.isKotlinType(javaType.getRawClass())) {
             Schemas.definedModel(schema, context)
                     .filter(model -> model.getProperties() != null)
-                    .ifPresent(model -> Json.mapper().getSerializationConfig().introspect(javaType).findProperties().stream()
-                            .filter(NullnessModelConverter::isNonNullReference)
-                            .map(BeanPropertyDefinition::getName)
+                    .ifPresent(model -> Stream.concat(nonNullReferences(javaType), primitiveCreatorParameters(javaType))
                             .filter(model.getProperties()::containsKey)
                             .filter(name -> !List.copyOf(requiredOf(model)).contains(name))
                             .forEach(model::addRequiredItem));
@@ -42,6 +42,20 @@ final class NullnessModelConverter implements ModelConverter {
 
     private static List<String> requiredOf(Schema<?> model) {
         return model.getRequired() == null ? List.of() : model.getRequired();
+    }
+
+    private static Stream<String> nonNullReferences(JavaType type) {
+        return Json.mapper().getSerializationConfig().introspect(type).findProperties().stream()
+                .filter(NullnessModelConverter::isNonNullReference)
+                .map(BeanPropertyDefinition::getName);
+    }
+
+    // Jackson 3 rejects a missing primitive creator parameter (FAIL_ON_NULL_FOR_PRIMITIVES).
+    private static Stream<String> primitiveCreatorParameters(JavaType type) {
+        return Json.mapper().getDeserializationConfig().introspect(type).findProperties().stream()
+                .filter(property -> property.getConstructorParameter() != null)
+                .filter(property -> property.getConstructorParameter().getRawType().isPrimitive())
+                .map(BeanPropertyDefinition::getName);
     }
 
     private static boolean isNonNullReference(BeanPropertyDefinition property) {
