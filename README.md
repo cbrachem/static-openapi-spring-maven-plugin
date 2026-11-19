@@ -53,6 +53,7 @@ The sample is a Spring Boot application with one Java controller and one Kotlin 
 - `@PathVariable`, `@RequestParam`, `@RequestHeader`, `@CookieValue`, `@RequestBody`, `@RequestPart`, `MultipartFile`, `@ModelAttribute`.
 - `@ResponseStatus`, `ResponseEntity<T>`, `Optional<T>`, `CompletableFuture<T>`, `Mono<T>`, `Flux<T>`, `Flow<T>`.
 - `@OpenAPIDefinition`, `@Operation`, `@Parameter`, `@ApiResponse`, `@Schema`, `@Tag`, `@SecurityScheme`, `@SecurityRequirement`, `@Hidden`.
+- Java: JSpecify nullness through the Spring `Nullness` API. A `@Nullable` parameter is not required. A non-null reference property is required, for example in `@NullMarked` code.
 - Kotlin: a nullable parameter or a parameter with a default value is not required. `suspend` functions work.
 - Kotlin: a property is required when it is non-nullable and its constructor parameter has no default value.
 - Kotlin: a constant default value becomes the schema `default`. Constants are numbers, strings, booleans, characters and enum entries.
@@ -64,6 +65,7 @@ The sample is a Spring Boot application with one Java controller and one Kotlin 
 - `${...}` placeholders in paths stay as they are.
 - The plugin reads Kotlin default values from the bytecode. A computed default, for example `LocalDate.now()`, gives no schema `default`. Set `@Schema(defaultValue = ...)` in that case.
 - One schema describes a class for requests and responses. A Kotlin property with a default value is thus optional in responses too.
+- A Java primitive property is not required, because Jackson gives it a default value.
 - `@Schema(requiredMode = REQUIRED)` on a Kotlin property with a default value has no effect.
 - Javadoc and KDoc are not in the bytecode.
 - The plugin class loader supplies Spring, swagger and Jackson annotation types. A much newer project version can have attributes that the plugin does not read.

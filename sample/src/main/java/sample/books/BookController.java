@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import java.util.List;
 import java.util.Optional;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,6 +32,7 @@ public class BookController {
     @GetMapping
     @Operation(summary = "Search books")
     public List<Book> search(
+            @RequestParam @Nullable String title,
             @RequestParam Optional<Book.Genre> genre,
             @Parameter(description = "Page size") @RequestParam(defaultValue = "20") @Max(100) int limit) {
         return List.of();

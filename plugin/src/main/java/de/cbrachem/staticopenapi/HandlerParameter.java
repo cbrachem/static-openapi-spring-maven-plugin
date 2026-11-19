@@ -13,6 +13,7 @@ import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.springframework.core.GenericTypeResolver;
+import org.springframework.core.Nullness;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.ClassUtils;
@@ -36,7 +37,9 @@ record HandlerParameter(Method method, Optional<String> declaredName, Type type,
                                     .or(() -> Optional.of(parameters[i]).filter(Parameter::isNamePresent).map(Parameter::getName)),
                             javaOptional ? ResolvableType.forType(type).getGeneric(0).getType() : type,
                             inheritedAnnotations(method, controller, i),
-                            javaOptional || kotlinInfo.map(info -> info.nullable() || info.hasDefault()).orElse(false),
+                            javaOptional
+                                    || Nullness.forParameter(parameters[i]) == Nullness.NULLABLE
+                                    || kotlinInfo.map(KotlinSupport.ParameterInfo::hasDefault).orElse(false),
                             kotlinInfo.flatMap(KotlinSupport.ParameterInfo::defaultValue));
                 })
                 .toList();

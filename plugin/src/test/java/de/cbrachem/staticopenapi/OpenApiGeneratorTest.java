@@ -73,4 +73,17 @@ class OpenApiGeneratorTest {
         assertThat(pet.getProperties().get("age")).extracting(Schema::getDescription).isEqualTo("Age in years");
         assertThat(openApi.getTags()).singleElement().extracting("description").isEqualTo("Pet operations");
     }
+
+    @Test
+    void readsJSpecifyNullness() {
+        var jspecify = OpenApiGenerator.generate(
+                List.of(Fixtures.OwnerController.class), new GeneratorConfig("Owners", "1.0", null));
+
+        assertThat(jspecify.getPaths().get("/owners").getGet().getParameters())
+                .extracting(Parameter::getName, Parameter::getRequired)
+                .containsExactly(tuple("name", true), tuple("email", false));
+        Schema<?> owner = jspecify.getComponents().getSchemas().get("Owner");
+        assertThat(owner.getRequired()).containsExactlyInAnyOrder("name", "phones");
+        assertThat(jspecify.getComponents().getSchemas().get("LegacyOwner").getRequired()).isNull();
+    }
 }

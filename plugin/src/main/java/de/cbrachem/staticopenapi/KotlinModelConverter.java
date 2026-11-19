@@ -23,21 +23,13 @@ final class KotlinModelConverter implements ModelConverter {
         }
         Schema schema = chain.next().resolve(type, context, chain);
         var rawType = Json.mapper().constructType(type.getType()).getRawClass();
-        model(schema, context)
+        Schemas.definedModel(schema, context)
                 .filter(model -> model.getProperties() != null)
                 .ifPresent(model -> KotlinSupport.describePrimaryConstructor(rawType).stream()
                         .flatMap(constructor -> constructor.parameters().stream())
                         .filter(KotlinSupport.ParameterInfo::hasDefault)
                         .forEach(parameter -> applyDefault(model, parameter)));
         return schema;
-    }
-
-    private static Optional<Schema<?>> model(Schema<?> schema, ModelConverterContext context) {
-        if (schema == null || schema.get$ref() == null) {
-            return Optional.ofNullable(schema);
-        }
-        var name = schema.get$ref().substring(schema.get$ref().lastIndexOf('/') + 1);
-        return Optional.ofNullable(context.getDefinedModels().get(name));
     }
 
     private static void applyDefault(Schema<?> model, KotlinSupport.ParameterInfo parameter) {

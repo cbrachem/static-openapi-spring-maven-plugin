@@ -12,6 +12,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.List;
 import java.util.Optional;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +39,29 @@ public final class Fixtures {
     public record Pet(@NotBlank String name, @Schema(description = "Age in years") Integer age, Status status) {}
 
     public enum Status { AVAILABLE, SOLD }
+
+    @NullMarked
+    public record Owner(String name, @Nullable String email, List<String> phones, int age) {}
+
+    public static class LegacyOwner {
+        public String getName() {
+            return "";
+        }
+    }
+
+    @NullMarked
+    @RestController
+    public static class OwnerController {
+        @GetMapping("/owners")
+        public List<Owner> search(@RequestParam String name, @RequestParam @Nullable String email) {
+            return List.of();
+        }
+
+        @GetMapping("/legacy-owners")
+        public LegacyOwner legacy() {
+            return new LegacyOwner();
+        }
+    }
 
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.RUNTIME)

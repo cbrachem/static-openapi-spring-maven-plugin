@@ -2,6 +2,7 @@ package de.cbrachem.staticopenapi;
 
 import com.fasterxml.jackson.module.kotlin.KotlinModule;
 import io.swagger.v3.core.converter.AnnotatedType;
+import io.swagger.v3.core.converter.ModelConverterContext;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.Components;
@@ -15,6 +16,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.InputStreamSource;
@@ -30,6 +32,7 @@ final class Schemas {
         // With this module Jackson marks non-nullable Kotlin properties as required.
         Json.mapper().registerModule(new KotlinModule.Builder().build());
         ModelConverters.getInstance().addConverter(new KotlinModelConverter());
+        ModelConverters.getInstance().addConverter(new NullnessModelConverter());
     }
 
     private Schemas() {}
@@ -74,6 +77,15 @@ final class Schemas {
         }
 
         return content;
+    }
+
+    // An object schema is a $ref. The model itself is in the context.
+    static Optional<Schema<?>> definedModel(Schema<?> schema, ModelConverterContext context) {
+        if (schema == null || schema.get$ref() == null) {
+            return Optional.ofNullable(schema);
+        }
+        var name = schema.get$ref().substring(schema.get$ref().lastIndexOf('/') + 1);
+        return Optional.ofNullable(context.getDefinedModels().get(name));
     }
 
     private static ResolvableType elementType(ResolvableType type) {
