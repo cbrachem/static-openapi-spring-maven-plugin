@@ -17,7 +17,8 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.ClassUtils;
 
-record HandlerParameter(Method method, Optional<String> declaredName, Type type, List<Annotation> annotations, boolean optional) {
+record HandlerParameter(Method method, Optional<String> declaredName, Type type, List<Annotation> annotations, boolean optional,
+                        Optional<Object> kotlinDefault) {
 
     static List<HandlerParameter> of(Method method, Class<?> controller, Optional<KotlinSupport.FunctionInfo> kotlin) {
         var parameters = method.getParameters();
@@ -35,8 +36,8 @@ record HandlerParameter(Method method, Optional<String> declaredName, Type type,
                                     .or(() -> Optional.of(parameters[i]).filter(Parameter::isNamePresent).map(Parameter::getName)),
                             javaOptional ? ResolvableType.forType(type).getGeneric(0).getType() : type,
                             inheritedAnnotations(method, controller, i),
-                            javaOptional || kotlinInfo.map(info -> info.nullable() || info.hasDefault()).orElse(false)
-                    );
+                            javaOptional || kotlinInfo.map(info -> info.nullable() || info.hasDefault()).orElse(false),
+                            kotlinInfo.flatMap(KotlinSupport.ParameterInfo::defaultValue));
                 })
                 .toList();
     }

@@ -9,7 +9,7 @@ The plugin does not start the application and does not create a Spring context.
 2. ClassGraph finds the classes in `target/classes`.
 3. Spring `AnnotatedElementUtils` resolves the mapping annotations. Meta-annotations and `@AliasFor` work.
 4. swagger-core `ModelConverters` builds the schemas. Jackson, Bean Validation and `io.swagger.v3.oas.annotations` apply.
-5. kotlin-reflect reads the Kotlin metadata. Java and Kotlin classes use the same code path.
+5. kotlin-reflect reads the Kotlin metadata. ASM reads Kotlin default values. Java and Kotlin classes use the same code path.
 
 ## Usage
 
@@ -53,14 +53,18 @@ The sample is a Spring Boot application with one Java controller and one Kotlin 
 - `@PathVariable`, `@RequestParam`, `@RequestHeader`, `@CookieValue`, `@RequestBody`, `@RequestPart`, `MultipartFile`, `@ModelAttribute`.
 - `@ResponseStatus`, `ResponseEntity<T>`, `Optional<T>`, `CompletableFuture<T>`, `Mono<T>`, `Flux<T>`, `Flow<T>`.
 - `@OpenAPIDefinition`, `@Operation`, `@Parameter`, `@ApiResponse`, `@Schema`, `@Tag`, `@SecurityScheme`, `@SecurityRequirement`, `@Hidden`.
-- Kotlin: a nullable parameter or a parameter with a default value is not required. A non-nullable property is required. `suspend` functions work.
+- Kotlin: a nullable parameter or a parameter with a default value is not required. `suspend` functions work.
+- Kotlin: a property is required when it is non-nullable and its constructor parameter has no default value.
+- Kotlin: a constant default value becomes the schema `default`. Constants are numbers, strings, booleans, characters and enum entries.
 
 ## Limits
 
 - `@Conditional`, `@Profile` and routes that the application registers in code are not visible.
 - `ObjectMapper` configuration is not visible. Only annotations on the classes apply.
 - `${...}` placeholders in paths stay as they are.
-- A Kotlin default value is not in the metadata. The parameter becomes optional, but the schema has no `default`.
+- The plugin reads Kotlin default values from the bytecode. A computed default, for example `LocalDate.now()`, gives no schema `default`. Set `@Schema(defaultValue = ...)` in that case.
+- One schema describes a class for requests and responses. A Kotlin property with a default value is thus optional in responses too.
+- `@Schema(requiredMode = REQUIRED)` on a Kotlin property with a default value has no effect.
 - Javadoc and KDoc are not in the bytecode.
 - The plugin class loader supplies Spring, swagger and Jackson annotation types. A much newer project version can have attributes that the plugin does not read.
 - Java parameter names need `-parameters`. Spring Boot sets this flag. Kotlin names come from the metadata.

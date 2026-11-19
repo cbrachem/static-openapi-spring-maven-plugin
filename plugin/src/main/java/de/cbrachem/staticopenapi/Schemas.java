@@ -27,8 +27,9 @@ final class Schemas {
             "org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody");
 
     static {
-        // Jackson reads nullability and default values of Kotlin properties with this module.
+        // With this module Jackson marks non-nullable Kotlin properties as required.
         Json.mapper().registerModule(new KotlinModule.Builder().build());
+        ModelConverters.getInstance().addConverter(new KotlinModelConverter());
     }
 
     private Schemas() {}

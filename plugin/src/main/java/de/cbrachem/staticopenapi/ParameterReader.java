@@ -125,10 +125,10 @@ final class ParameterReader {
     if (result == null) {
       return;
     }
-
-    if (hasDefault && result.getSchema() != null && result.getSchema().get$ref() == null) {
-      result.getSchema().setDefault(defaultValue);
-    }
+      var schemaDefault = hasDefault ? Optional.<Object>of(defaultValue) : parameter.kotlinDefault();
+      if (result.getSchema() != null && result.getSchema().get$ref() == null && result.getSchema().getDefault() == null) {
+        schemaDefault.ifPresent(result.getSchema()::setDefault);
+      }
     operation.addParametersItem(result);
   }
 
