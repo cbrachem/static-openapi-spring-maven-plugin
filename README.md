@@ -1,4 +1,4 @@
-# static-openapi-maven-plugin
+# static-openapi-spring-maven-plugin
 
 A Maven plugin that generates an OpenAPI 3.1 document (`openapi.yaml` or `openapi.json`) from compiled Spring MVC controllers.
 The plugin does not start the application and does not create a Spring context.
@@ -16,7 +16,7 @@ The plugin does not start the application and does not create a Spring context.
 ```xml
 <plugin>
   <groupId>de.cbrachem</groupId>
-  <artifactId>static-openapi-maven-plugin</artifactId>
+  <artifactId>static-openapi-spring-maven-plugin</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <executions>
     <execution>
