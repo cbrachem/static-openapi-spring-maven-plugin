@@ -41,7 +41,7 @@ public final class Fixtures {
     public enum Status { AVAILABLE, SOLD }
 
     @NullMarked
-    public record Owner(String name, @Nullable String email, List<String> phones, int age) {}
+    public record Owner(String name, @Nullable String email, List<String> phones, int age, @Nullable Pet favorite) {}
 
     @tools.jackson.databind.annotation.JsonNaming(tools.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy.class)
     public record Shipment(

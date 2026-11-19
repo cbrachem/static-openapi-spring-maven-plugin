@@ -1,21 +1,21 @@
 package de.cbrachem.staticopenapi;
 
 import com.fasterxml.jackson.databind.AnnotationIntrospector;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.module.kotlin.KotlinModule;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverterContext;
 import io.swagger.v3.core.converter.ModelConverters;
-import io.swagger.v3.core.util.Json;
+import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.Components;
-import io.swagger.v3.oas.models.media.ArraySchema;
-import io.swagger.v3.oas.models.media.BinarySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
-import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.JsonSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +31,7 @@ final class Schemas {
             "org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody");
 
     static {
-        var mapper = Json.mapper();
+        var mapper = Json31.mapper();
         // With this module Jackson marks non-nullable Kotlin properties as required.
         mapper.registerModule(new KotlinModule.Builder().build());
         mapper.setAnnotationIntrospectors(
@@ -45,9 +45,9 @@ final class Schemas {
 
     static void configure(GeneratorConfig config) {
         // Jackson 3 writes enums with toString(). Jackson 2 writes the name.
-        Json.mapper().configure(SerializationFeature.WRITE_ENUMS_USING_TO_STRING, !config.jackson2Defaults());
+        mapper().configure(SerializationFeature.WRITE_ENUMS_USING_TO_STRING, !config.jackson2Defaults());
         ModelConverters.reset();
-        var converters = ModelConverters.getInstance();
+        var converters = ModelConverters.getInstance(true);
         converters.addConverter(new KotlinModelConverter());
         converters.addConverter(new NullnessModelConverter(!config.jackson2Defaults()));
         converters.addConverter(new Jackson3Bridge());
@@ -59,18 +59,61 @@ final class Schemas {
         var element = elementType(resolvable);
 
         if (isBinary(element.toClass())) {
-            return element == resolvable ? new BinarySchema() : new ArraySchema().items(new BinarySchema());
+            return element == resolvable ? binary() : new JsonSchema().typesItem("array").items(binary());
         }
 
         var annotatedType = new AnnotatedType(type).resolveAsRef(true).ctxAnnotations(annotations.toArray(Annotation[]::new));
-        var resolved = ModelConverters.getInstance().resolveAsResolvedSchema(annotatedType);
+        var resolved = ModelConverters.getInstance(true).resolveAsResolvedSchema(annotatedType);
         if (resolved == null || resolved.schema == null) {
-            return new ObjectSchema();
+            return new JsonSchema().typesItem("object");
         }
 
         resolved.referencedSchemas.forEach(components::addSchemas);
 
         return resolved.schema;
+    }
+
+    static ObjectMapper mapper() {
+        return Json31.mapper();
+    }
+
+    // OpenAPI 3.1: "type: [string, null]", or anyOf with a null type next to a $ref.
+    static Schema<?> nullable(Schema<?> schema) {
+        if (schema.get$ref() != null) {
+            return new JsonSchema().anyOf(List.of(schema, new JsonSchema().typesItem("null")));
+        }
+        if (schema.getTypes() != null) {
+            schema.addType("null");
+        }
+        return schema;
+    }
+
+    static void setDefault(Schema<?> schema, Object value) {
+        if (schema.get$ref() == null && schema.getDefault() == null) {
+            schema.setDefault(coerce(value, schema.getTypes() == null ? Set.<String>of() : schema.getTypes()));
+        }
+    }
+
+    // Spring declares default values as text. The schema default needs the JSON type.
+    private static Object coerce(Object value, Set<String> types) {
+        if (!(value instanceof String text)) {
+            return value;
+        }
+        try {
+            if (types.contains("integer")) {
+                return Long.valueOf(text);
+            }
+            if (types.contains("number")) {
+                return new BigDecimal(text);
+            }
+        } catch (NumberFormatException e) {
+            return value;
+        }
+        return types.contains("boolean") ? Boolean.valueOf(text) : value;
+    }
+
+    private static Schema<?> binary() {
+        return new JsonSchema().typesItem("string").format("binary");
     }
 
     static boolean isBinary(Type type) {

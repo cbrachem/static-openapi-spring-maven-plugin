@@ -87,8 +87,8 @@ final class OperationReader {
 
         annotation.ifPresent(it -> {
             operation.summary(emptyToNull(it.summary())).description(emptyToNull(it.description()));
-            AnnotationsUtils.getExternalDocumentation(it.externalDocs()).ifPresent(operation::externalDocs);
-            var extensions = AnnotationsUtils.getExtensions(it.extensions());
+            AnnotationsUtils.getExternalDocumentation(it.externalDocs(), true).ifPresent(operation::externalDocs);
+            var extensions = AnnotationsUtils.getExtensions(true, it.extensions());
             operation.extensions(extensions.isEmpty() ? null : extensions);
         });
 
@@ -116,7 +116,7 @@ final class OperationReader {
                                 .stream()))
                 .toArray(io.swagger.v3.oas.annotations.responses.ApiResponse[]::new);
 
-        var responses = OperationParser.getApiResponses(declared, null, null, openApi.getComponents(), null)
+        var responses = OperationParser.getApiResponses(declared, null, null, openApi.getComponents(), null, true, ApiResponses.DEFAULT)
                 .orElseGet(ApiResponses::new);
         responses.values().forEach(response -> Schemas.withMediaTypes(response.getContent(), produces));
 

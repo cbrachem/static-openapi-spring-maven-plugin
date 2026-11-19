@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.SpecVersion;
 import io.swagger.v3.oas.models.info.Info;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -49,13 +50,13 @@ public final class OpenApiGenerator {
                         AnnotatedElementUtils.findMergedAnnotation(type, OpenAPIDefinition.class)).stream())
                 .findFirst();
 
-        var openApi = new OpenAPI();
+        var openApi = new OpenAPI(SpecVersion.V31).openapi("3.1.0");
 
         definition.ifPresent(it -> {
-            AnnotationsUtils.getInfo(it.info()).ifPresent(openApi::info);
+            AnnotationsUtils.getInfo(it.info(), true).ifPresent(openApi::info);
             AnnotationsUtils.getServers(it.servers()).ifPresent(openApi::servers);
             AnnotationsUtils.getTags(it.tags(), false).map(ArrayList::new).ifPresent(openApi::tags);
-            AnnotationsUtils.getExternalDocumentation(it.externalDocs()).ifPresent(openApi::externalDocs);
+            AnnotationsUtils.getExternalDocumentation(it.externalDocs(), true).ifPresent(openApi::externalDocs);
             SecurityParser.getSecurityRequirements(it.security()).ifPresent(openApi::security);
         });
 

@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.introspect.NopAnnotationIntrospector;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverter;
 import io.swagger.v3.core.converter.ModelConverterContext;
-import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.Schema;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
@@ -45,7 +44,7 @@ final class Jackson3Bridge implements ModelConverter {
         if (!chain.hasNext()) {
             return null;
         }
-        var rawType = Json.mapper().constructType(type.getType()).getRawClass();
+        var rawType = Schemas.mapper().constructType(type.getType()).getRawClass();
         var declared = Stream.of(Optional.ofNullable(type.getCtxAnnotations()).orElse(new Annotation[0]), rawType.getAnnotations())
                 .flatMap(annotations -> attribute(annotations, "JsonSerialize", "as").stream())
                 .filter(target -> target != Void.class && target != rawType)

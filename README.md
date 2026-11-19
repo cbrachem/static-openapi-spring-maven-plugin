@@ -1,6 +1,6 @@
 # static-openapi-maven-plugin
 
-A Maven plugin that generates `openapi.yaml` or `openapi.json` from compiled Spring MVC controllers.
+A Maven plugin that generates an OpenAPI 3.1 document (`openapi.yaml` or `openapi.json`) from compiled Spring MVC controllers.
 The plugin does not start the application and does not create a Spring context.
 
 ## How it works
@@ -65,12 +65,14 @@ The sample is a Spring Boot application with one Java controller and one Kotlin 
 - Java: JSpecify nullness through the Spring `Nullness` API. A `@Nullable` parameter is not required. A non-null reference property is required, for example in `@NullMarked` code.
 - Jackson 3 defaults of Spring Boot 4: a primitive record component or creator parameter is required. Enum values use `toString()`. `jackson2Defaults` reverts both rules.
 - Jackson 3 annotations: `@JsonNaming` with a standard strategy and `@JsonSerialize(as = ...)` from `tools.jackson.databind.annotation`.
+- Nullability in the type: a nullable Kotlin or JSpecify property or parameter gets `type: [<type>, "null"]`. A nullable reference gets `anyOf` with `$ref` and the null type.
 - Kotlin: a nullable parameter or a parameter with a default value is not required. `suspend` functions work.
 - Kotlin: a property is required when it is non-nullable and its constructor parameter has no default value.
 - Kotlin: a constant default value becomes the schema `default`. Constants are numbers, strings, booleans, characters and enum entries.
 
 ## Limits
 
+- The plugin writes OpenAPI 3.1 only. OpenAPI 3.0 is not available.
 - `@Conditional`, `@Profile` and routes that the application registers in code are not visible.
 - `ObjectMapper` configuration is not visible. Only annotations on the classes apply.
 - `${...}` placeholders in paths stay as they are.

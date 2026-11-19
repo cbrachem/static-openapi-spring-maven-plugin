@@ -1,4 +1,4 @@
-openapi: 3.0.1
+openapi: 3.1.0
 info:
   title: Library API
   description: Mixed Java and Kotlin sample
@@ -20,7 +20,9 @@ paths:
         in: query
         required: false
         schema:
-          type: string
+          type:
+          - string
+          - "null"
       - name: limit
         in: query
         required: false
@@ -37,7 +39,9 @@ paths:
         in: header
         required: false
         schema:
-          type: string
+          type:
+          - string
+          - "null"
       responses:
         "200":
           description: OK
@@ -122,7 +126,9 @@ paths:
         in: query
         required: false
         schema:
-          type: string
+          type:
+          - string
+          - "null"
       - name: genre
         in: query
         required: false
@@ -137,10 +143,10 @@ paths:
         description: Page size
         required: false
         schema:
-          maximum: 100
           type: integer
           format: int32
           default: 20
+          maximum: 100
       responses:
         "200":
           description: OK
@@ -222,13 +228,13 @@ paths:
         content:
           multipart/form-data:
             schema:
-              required:
-              - cover
               type: object
               properties:
                 cover:
                   type: string
                   format: binary
+              required:
+              - cover
         required: true
       responses:
         "204":
@@ -236,9 +242,6 @@ paths:
 components:
   schemas:
     Author:
-      required:
-      - id
-      - name
       type: object
       properties:
         id:
@@ -247,30 +250,35 @@ components:
         name:
           type: string
         biography:
-          type: string
+          type:
+          - string
+          - "null"
           description: "Nullable in Kotlin, therefore not required"
         active:
           type: boolean
           default: true
-    Book:
       required:
-      - author
-      - genre
-      - title
+      - id
+      - name
+    Book:
       type: object
       properties:
         id:
-          type: integer
+          type:
+          - integer
+          - "null"
           format: int64
           readOnly: true
         title:
+          type: string
           maxLength: 200
           minLength: 0
-          type: string
         author:
           $ref: "#/components/schemas/Author"
         publishedOn:
-          type: string
+          type:
+          - string
+          - "null"
           format: date
         genre:
           type: string
@@ -278,6 +286,10 @@ components:
           - FICTION
           - NON_FICTION
           - SCIENCE
+      required:
+      - author
+      - genre
+      - title
   securitySchemes:
     bearer:
       type: http

@@ -29,6 +29,7 @@ class EdgeCasesTest {
 
     @Test
     void readsDefinitionAndSecuritySchemes() {
+        assertThat(openApi.getOpenapi()).isEqualTo("3.1.0");
         assertThat(openApi.getInfo().getTitle()).isEqualTo("Edge API");
         assertThat(openApi.getInfo().getVersion()).isEqualTo("9");
         assertThat(openApi.getServers()).singleElement().extracting("url").isEqualTo("https://example.org");
@@ -66,7 +67,7 @@ class EdgeCasesTest {
         assertThat(responseSchema("/returns/mono").get$ref()).endsWith("/Item");
         assertThat(responseSchema("/returns/flux").getItems().get$ref()).endsWith("/Item");
         assertThat(responseSchema("/returns/optional").get$ref()).endsWith("/Item");
-        assertThat(responseSchema("/returns/wildcard").getType()).isEqualTo("object");
+        assertThat(responseSchema("/returns/wildcard").get$ref()).isNull();
         assertThat(responseSchema("/returns/resource").getFormat()).isEqualTo("binary");
         assertThat(get("/returns/raw").getResponses().get("200").getContent()).isNull();
         assertThat(get("/returns/void").getResponses().get("200").getContent()).isNull();
@@ -93,7 +94,7 @@ class EdgeCasesTest {
         assertThat(parameters("/params/unannotated")).containsExactly(tuple("filter", "query", false), tuple("page", "query", false));
         assertThat(get("/params/maps").getParameters()).isNull();
         assertThat(parameters("/params/hidden")).containsExactly(tuple("shown", "query", true));
-        assertThat(get("/params/list").getParameters().get(0).getSchema().getType()).isEqualTo("array");
+        assertThat(get("/params/list").getParameters().get(0).getSchema().getTypes()).containsExactly("array");
     }
 
     @Test
@@ -134,6 +135,8 @@ class EdgeCasesTest {
                         tuple("separator", ","), tuple("limit", "50"), tuple("ratio", "0.5"),
                         tuple("negative", "-1"), tuple("flag", "false"));
         assertThat(get("/kotlin/defaults").getResponses().get("200").getContent()).isNull();
+        assertThat(get("/kotlin/search").getParameters().get(1).getSchema().getTypes()).containsExactlyInAnyOrder("string", "null");
+        assertThat(get("/kotlin/search").getParameters().get(0).getSchema().getTypes()).containsExactly("integer");
     }
 
     private Operation get(String path) {

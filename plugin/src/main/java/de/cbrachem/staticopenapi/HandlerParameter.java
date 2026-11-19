@@ -18,7 +18,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.ClassUtils;
 
-record HandlerParameter(Method method, Optional<String> declaredName, Type type, List<Annotation> annotations, boolean optional,
+record HandlerParameter(Method method, Optional<String> declaredName, Type type, List<Annotation> annotations, boolean optional, boolean nullable,
                         Optional<Object> kotlinDefault) {
 
     static List<HandlerParameter> of(Method method, Class<?> controller, Optional<KotlinSupport.FunctionInfo> kotlin) {
@@ -30,16 +30,15 @@ record HandlerParameter(Method method, Optional<String> declaredName, Type type,
                     var kotlinInfo = kotlin.map(info -> info.parameters().get(i));
                     var type = GenericTypeResolver.resolveType(method.getGenericParameterTypes()[i], controller);
                     boolean javaOptional = ResolvableType.forType(type).resolve() == Optional.class;
-
+                    boolean nullable = Nullness.forParameter(parameters[i]) == Nullness.NULLABLE;
                     return new HandlerParameter(
                             method,
                             kotlinInfo.map(KotlinSupport.ParameterInfo::name)
                                     .or(() -> Optional.of(parameters[i]).filter(Parameter::isNamePresent).map(Parameter::getName)),
                             javaOptional ? ResolvableType.forType(type).getGeneric(0).getType() : type,
                             inheritedAnnotations(method, controller, i),
-                            javaOptional
-                                    || Nullness.forParameter(parameters[i]) == Nullness.NULLABLE
-                                    || kotlinInfo.map(KotlinSupport.ParameterInfo::hasDefault).orElse(false),
+                            javaOptional || nullable || kotlinInfo.map(KotlinSupport.ParameterInfo::hasDefault).orElse(false),
+                            nullable,
                             kotlinInfo.flatMap(KotlinSupport.ParameterInfo::defaultValue));
                 })
                 .toList();

@@ -34,6 +34,9 @@ class KotlinSupportTest {
     void requiresOnlyNonNullPropertiesWithoutDefault() {
         Schema<?> order = openApi.getComponents().getSchemas().get("Order");
         assertThat(order.getRequired()).containsExactly("id");
+        assertThat(order.getProperties().get("note").getTypes()).containsExactlyInAnyOrder("string", "null");
+        assertThat(order.getProperties().get("weight").getTypes()).containsExactlyInAnyOrder("number", "null");
+        assertThat(order.getProperties().get("id").getTypes()).containsExactly("integer");
         assertThat(order.getProperties().entrySet())
                 .extracting(entry -> entry.getKey(), entry -> text(entry.getValue().getDefault()))
                 .containsExactlyInAnyOrder(

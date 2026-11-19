@@ -33,7 +33,7 @@ class OpenApiGeneratorTest {
                         tuple("limit", "query", false),
                         tuple("status", "query", false),
                         tuple("X-Tenant", "header", true));
-        assertThat(list.getParameters().get(0).getSchema().getDefault()).isEqualTo(20);
+        assertThat(list.getParameters().get(0).getSchema().getDefault()).isEqualTo(20L);
         assertThat(list.getParameters().get(1).getSchema().getEnum()).hasSize(2);
         assertThat(list.getResponses()).containsOnlyKeys("200", "400");
         assertThat(list.getResponses().get("200").getContent().get("application/json").getSchema().getItems().get$ref())
@@ -84,6 +84,14 @@ class OpenApiGeneratorTest {
                 .containsExactly(tuple("name", true), tuple("email", false));
         Schema<?> owner = jspecify.getComponents().getSchemas().get("Owner");
         assertThat(owner.getRequired()).containsExactlyInAnyOrder("name", "phones", "age");
+        assertThat(owner.getProperties().get("email").getTypes()).containsExactlyInAnyOrder("string", "null");
+        assertThat(owner.getProperties().get("name").getTypes()).containsExactly("string");
+        Schema<?> favorite = owner.getProperties().get("favorite");
+        assertThat(favorite.getAnyOf()).hasSize(2);
+        assertThat(favorite.getAnyOf().get(0).get$ref()).isEqualTo("#/components/schemas/Pet");
+        assertThat(favorite.getAnyOf().get(1).getTypes()).containsExactly("null");
+        assertThat(jspecify.getPaths().get("/owners").getGet().getParameters().get(1).getSchema().getTypes())
+                .containsExactlyInAnyOrder("string", "null");
         assertThat(jspecify.getComponents().getSchemas().get("LegacyOwner").getRequired()).isNull();
     }
 

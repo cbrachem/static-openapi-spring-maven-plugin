@@ -5,7 +5,8 @@ import io.swagger.v3.jaxrs2.OperationParser;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.JsonSchema;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import java.lang.reflect.Method;
@@ -52,7 +53,7 @@ final class ParameterReader {
 
   void read(Operation operation, Method method, Class<?> controller, Mapping mapping,
       Optional<KotlinSupport.FunctionInfo> kotlin) {
-    var form = new ObjectSchema();
+    Schema<?> form = new JsonSchema().typesItem("object");
     HandlerParameter.of(method, controller, kotlin).stream()
         .filter(parameter -> !isHidden(parameter))
         .forEach(parameter -> read(parameter, operation, form, mapping));
@@ -67,7 +68,7 @@ final class ParameterReader {
     declaredParameters(method).forEach(declared -> describe(operation, declared));
   }
 
-  private void read(HandlerParameter parameter, Operation operation, ObjectSchema form, Mapping mapping) {
+  private void read(HandlerParameter parameter, Operation operation, Schema<?> form, Mapping mapping) {
     var requestBody = parameter.annotation(org.springframework.web.bind.annotation.RequestBody.class);
     var requestPart = parameter.annotation(RequestPart.class);
     var pathVariable = parameter.annotation(PathVariable.class);
@@ -85,7 +86,7 @@ final class ParameterReader {
           .content(Schemas.content(config.mediaTypesOrDefault(mapping.consumes()), schema));
 
       var declared = parameter.annotation(io.swagger.v3.oas.annotations.parameters.RequestBody.class)
-          .flatMap(annotation -> OperationParser.getRequestBody(annotation, null, null, components, null));
+          .flatMap(annotation -> OperationParser.getRequestBody(annotation, null, null, components, null, true));
 
       operation.requestBody(declared
           .map(it -> merge(body, it, config.mediaTypesOrDefault(mapping.consumes())))
@@ -127,20 +128,21 @@ final class ParameterReader {
         .in(in)
         .name(parameter.name(annotationName))
         .required(in.equals("path") || annotationRequired && !hasDefault && !parameter.optional());
-
-    var result = ParameterProcessor.applyAnnotations(
-        base, parameter.type(), parameter.annotations(), components, new String[0], new String[0], null);
-    if (result == null) {
-      return;
-    }
-      var schemaDefault = hasDefault ? Optional.<Object>of(defaultValue) : parameter.kotlinDefault();
-      if (result.getSchema() != null && result.getSchema().get$ref() == null && result.getSchema().getDefault() == null) {
-        schemaDefault.ifPresent(result.getSchema()::setDefault);
+      var result = ParameterProcessor.applyAnnotations(
+              base, parameter.type(), parameter.annotations(), components, new String[0], new String[0], null, true);
+      if (result == null) {
+        return;
       }
-    operation.addParametersItem(result);
+      if (result.getSchema() != null) {
+          var schema = result.getSchema();
+          (hasDefault ? Optional.<Object>of(defaultValue) : parameter.kotlinDefault())
+                  .ifPresent(value -> Schemas.setDefault(schema, value));
+          result.setSchema(parameter.nullable() && !in.equals("path") ? Schemas.nullable(schema) : schema);
+      }
+      operation.addParametersItem(result);
   }
 
-  private void addFormPart(ObjectSchema form, HandlerParameter parameter, String annotationName, boolean required) {
+  private void addFormPart(Schema<?> form, HandlerParameter parameter, String annotationName, boolean required) {
     var name = parameter.name(annotationName);
     form.addProperty(name, Schemas.resolve(parameter.type(), parameter.annotations(), components));
 
@@ -158,7 +160,7 @@ final class ParameterReader {
         .map(io.swagger.v3.oas.annotations.Operation::requestBody);
 
     return Optional.ofNullable(onMethod).or(() -> inOperation)
-        .flatMap(annotation -> OperationParser.getRequestBody(annotation, null, null, components, null));
+        .flatMap(annotation -> OperationParser.getRequestBody(annotation, null, null, components, null, true));
   }
 
   private Stream<io.swagger.v3.oas.annotations.Parameter> declaredParameters(Method method) {
@@ -183,7 +185,7 @@ final class ParameterReader {
     if (detected.isEmpty()) {
       Optional.ofNullable(ParameterProcessor.applyAnnotations(
           null, ParameterProcessor.getParameterType(declared), List.of(declared), components,
-          new String[0], new String[0], null))
+          new String[0], new String[0], null, true))
           .ifPresent(operation::addParametersItem);
     } else if (declared.hidden()) {
       operation.getParameters().remove(detected.get());
