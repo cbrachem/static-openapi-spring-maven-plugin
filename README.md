@@ -17,7 +17,7 @@ The plugin does not start the application and does not create a Spring context.
 <plugin>
   <groupId>de.cbrachem</groupId>
   <artifactId>static-openapi-spring-maven-plugin</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.1.0</version>
   <executions>
     <execution>
       <goals>
@@ -55,6 +55,13 @@ The sample is a Spring Boot application with one Java controller and one Kotlin 
 - `sample/src/test`: the generated document must match `expected-openapi.yaml` and must be valid OpenAPI.
 
 `mvn install` runs all tests. After an intended change of the sample output, copy `sample/target/openapi/openapi.yaml` to `sample/src/test/resources/expected-openapi.yaml`.
+
+## Release
+
+1. Push a tag `v<version>`, for example `v0.1.0`.
+2. The `Release` workflow sets the version from the tag, signs the artifacts and publishes them to Maven Central.
+
+The workflow needs the repository secrets `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`, `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE`.
 
 ## Supported
 

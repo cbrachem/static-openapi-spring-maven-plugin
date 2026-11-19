@@ -12,6 +12,8 @@
   <artifactId>static-openapi-spring-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
 
+  <name>Static OpenAPI Spring Maven Plugin</name>
+
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -161,6 +163,7 @@
         <version>${plugin-tools.version}</version>
         <configuration>
           <goalPrefix>static-openapi</goalPrefix>
+          <requiredMavenVersion>3.9.0</requiredMavenVersion>
         </configuration>
       </plugin>
       <plugin>
