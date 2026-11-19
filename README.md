@@ -36,6 +36,7 @@ The plugin does not start the application and does not create a Spring context.
 | `title`, `version` | project name and version | Fallback when no `@OpenAPIDefinition` sets `info`. |
 | `basePackages` | empty | When empty, the plugin scans only this module. When set, the plugin scans these packages on the full compile classpath. |
 | `defaultMediaType` | `application/json` | Media type when a mapping declares no `consumes` or `produces`. |
+| `jackson2Defaults` | `false` | Set to `true` when the application sets `spring.jackson.use-jackson2-defaults=true`. |
 | `skip` | `false` | Skips the goal. |
 
 ## Build and run the sample
@@ -54,7 +55,7 @@ The sample is a Spring Boot application with one Java controller and one Kotlin 
 - `@ResponseStatus`, `ResponseEntity<T>`, `Optional<T>`, `CompletableFuture<T>`, `Mono<T>`, `Flux<T>`, `Flow<T>`.
 - `@OpenAPIDefinition`, `@Operation`, `@Parameter`, `@ApiResponse`, `@Schema`, `@Tag`, `@SecurityScheme`, `@SecurityRequirement`, `@Hidden`.
 - Java: JSpecify nullness through the Spring `Nullness` API. A `@Nullable` parameter is not required. A non-null reference property is required, for example in `@NullMarked` code.
-- Jackson 3 defaults of Spring Boot 4: a primitive record component or creator parameter is required. Enum values use `toString()`.
+- Jackson 3 defaults of Spring Boot 4: a primitive record component or creator parameter is required. Enum values use `toString()`. `jackson2Defaults` reverts both rules.
 - Jackson 3 annotations: `@JsonNaming` with a standard strategy and `@JsonSerialize(as = ...)` from `tools.jackson.databind.annotation`.
 - Kotlin: a nullable parameter or a parameter with a default value is not required. `suspend` functions work.
 - Kotlin: a property is required when it is non-nullable and its constructor parameter has no default value.

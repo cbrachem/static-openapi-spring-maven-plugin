@@ -22,6 +22,7 @@ public final class OpenApiGenerator {
     private OpenApiGenerator() {}
 
     public static OpenAPI generate(List<Class<?>> classes, GeneratorConfig config) {
+        Schemas.configure(config);
         var openApi = definition(classes, config).components(new Components()).paths(new Paths());
 
         classes.stream()

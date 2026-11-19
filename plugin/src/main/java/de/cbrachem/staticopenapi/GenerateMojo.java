@@ -57,6 +57,13 @@ public class GenerateMojo extends AbstractMojo {
     @Parameter(defaultValue = "application/json", property = "staticOpenapi.defaultMediaType")
     private String defaultMediaType;
 
+    /**
+     * Set to true when the application sets spring.jackson.use-jackson2-defaults=true.
+     * Then a primitive creator parameter is not required, and enum values use name().
+     */
+    @Parameter(defaultValue = "false", property = "staticOpenapi.jackson2Defaults")
+    private boolean jackson2Defaults;
+
     @Parameter(defaultValue = "false", property = "staticOpenapi.skip")
     private boolean skip;
 
@@ -76,7 +83,8 @@ public class GenerateMojo extends AbstractMojo {
             Thread.currentThread().setContextClassLoader(loader);
 
             var classes = ClassScanner.scan(scanPath, basePackages, loader);
-            var openApi = OpenApiGenerator.generate(classes, new GeneratorConfig(title, version, defaultMediaType));
+            var config = new GeneratorConfig(title, version, defaultMediaType, jackson2Defaults);
+            var openApi = OpenApiGenerator.generate(classes, config);
 
             getLog().info("Found " + openApi.getPaths().size() + " paths in " + classes.size() + " classes.");
 

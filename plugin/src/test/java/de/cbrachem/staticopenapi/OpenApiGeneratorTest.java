@@ -14,7 +14,7 @@ class OpenApiGeneratorTest {
 
     private final OpenAPI openApi = OpenApiGenerator.generate(
             List.of(Fixtures.PetController.class, Fixtures.ViewController.class, Fixtures.Pet.class),
-            new GeneratorConfig("Pets", "1.0", null));
+            new GeneratorConfig("Pets", "1.0", null, false));
 
     @Test
     void resolvesComposedMappingsAndStripsPathPatterns() {
@@ -77,7 +77,7 @@ class OpenApiGeneratorTest {
     @Test
     void readsJSpecifyNullness() {
         var jspecify = OpenApiGenerator.generate(
-                List.of(Fixtures.OwnerController.class), new GeneratorConfig("Owners", "1.0", null));
+                List.of(Fixtures.OwnerController.class), new GeneratorConfig("Owners", "1.0", null, false));
 
         assertThat(jspecify.getPaths().get("/owners").getGet().getParameters())
                 .extracting(Parameter::getName, Parameter::getRequired)
@@ -90,12 +90,22 @@ class OpenApiGeneratorTest {
     @Test
     void appliesJackson3AnnotationsAndDefaults() {
         var jackson3 = OpenApiGenerator.generate(
-                List.of(Fixtures.OwnerController.class), new GeneratorConfig("Owners", "1.0", null));
+                List.of(Fixtures.OwnerController.class), new GeneratorConfig("Owners", "1.0", null, false));
 
         Schema<?> shipment = jackson3.getComponents().getSchemas().get("Shipment");
         assertThat(shipment.getProperties()).containsOnlyKeys("tracking_code", "parcel_count", "priority", "sender");
         assertThat(shipment.getRequired()).containsExactly("parcel_count");
         assertThat(shipment.getProperties().get("priority").getEnum()).extracting(Object::toString).containsExactly("low", "high");
         assertThat(shipment.getProperties().get("sender").get$ref()).isEqualTo("#/components/schemas/Owner");
+    }
+
+    @Test
+    void appliesJackson2DefaultsOnRequest() {
+        var jackson2 = OpenApiGenerator.generate(
+                List.of(Fixtures.OwnerController.class), new GeneratorConfig("Owners", "1.0", null, true));
+
+        Schema<?> shipment = jackson2.getComponents().getSchemas().get("Shipment");
+        assertThat(shipment.getRequired()).isNull();
+        assertThat(shipment.getProperties().get("priority").getEnum()).extracting(Object::toString).containsExactly("LOW", "HIGH");
     }
 }

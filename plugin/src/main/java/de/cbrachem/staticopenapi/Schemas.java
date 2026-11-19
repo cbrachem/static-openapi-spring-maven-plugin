@@ -39,16 +39,20 @@ final class Schemas {
                         mapper.getSerializationConfig().getAnnotationIntrospector(), Jackson3Bridge.introspector()),
                 AnnotationIntrospector.pair(
                         mapper.getDeserializationConfig().getAnnotationIntrospector(), Jackson3Bridge.introspector()));
-        // Jackson 3 default
-        mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
-
-        var converters = ModelConverters.getInstance();
-        converters.addConverter(new KotlinModelConverter());
-        converters.addConverter(new NullnessModelConverter());
-        converters.addConverter(new Jackson3Bridge());
     }
 
     private Schemas() {}
+
+    static void configure(GeneratorConfig config) {
+        // Jackson 3 writes enums with toString(). Jackson 2 writes the name.
+        Json.mapper().configure(SerializationFeature.WRITE_ENUMS_USING_TO_STRING, !config.jackson2Defaults());
+        ModelConverters.reset();
+        var converters = ModelConverters.getInstance();
+        converters.addConverter(new KotlinModelConverter());
+        converters.addConverter(new NullnessModelConverter(!config.jackson2Defaults()));
+        converters.addConverter(new Jackson3Bridge());
+    }
+
 
     static Schema<?> resolve(Type type, List<Annotation> annotations, Components components) {
         var resolvable = ResolvableType.forType(type);

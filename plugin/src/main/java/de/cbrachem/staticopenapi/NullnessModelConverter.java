@@ -21,6 +21,12 @@ import org.springframework.core.Nullness;
  */
 final class NullnessModelConverter implements ModelConverter {
 
+    private final boolean requirePrimitiveCreatorParameters;
+
+    NullnessModelConverter(boolean requirePrimitiveCreatorParameters) {
+        this.requirePrimitiveCreatorParameters = requirePrimitiveCreatorParameters;
+    }
+
     @Override
     @SuppressWarnings("rawtypes")
     public Schema resolve(AnnotatedType type, ModelConverterContext context, Iterator<ModelConverter> chain) {
@@ -50,8 +56,11 @@ final class NullnessModelConverter implements ModelConverter {
                 .map(BeanPropertyDefinition::getName);
     }
 
-    // Jackson 3 rejects a missing primitive creator parameter (FAIL_ON_NULL_FOR_PRIMITIVES).
-    private static Stream<String> primitiveCreatorParameters(JavaType type) {
+    // Jackson 3 rejects a missing primitive creator parameter (FAIL_ON_NULL_FOR_PRIMITIVES). Jackson 2 uses 0.
+    private Stream<String> primitiveCreatorParameters(JavaType type) {
+        if (!requirePrimitiveCreatorParameters) {
+            return Stream.empty();
+        }
         return Json.mapper().getDeserializationConfig().introspect(type).findProperties().stream()
                 .filter(property -> property.getConstructorParameter() != null)
                 .filter(property -> property.getConstructorParameter().getRawType().isPrimitive())

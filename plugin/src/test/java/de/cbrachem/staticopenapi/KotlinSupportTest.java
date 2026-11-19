@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 class KotlinSupportTest {
 
     private final OpenAPI openApi = OpenApiGenerator.generate(
-            List.of(OrderController.class, Order.class), new GeneratorConfig("Orders", "1.0", null));
+            List.of(OrderController.class, Order.class), new GeneratorConfig("Orders", "1.0", null, false));
 
     @Test
     void readsNullabilityAndConstantDefaultsOfParameters() {
