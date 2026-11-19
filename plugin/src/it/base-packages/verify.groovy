@@ -12,3 +12,6 @@ def api = new File(basedir, 'api/target/openapi/openapi.yaml')
 assert api.text.contains('/greetings/{name}:')
 
 assert !new File(basedir, 'skipped/target/openapi').exists()
+
+def json = new groovy.json.JsonSlurper().parse(new File(basedir, 'app/target/openapi/api.json'))
+assert json.paths['/greetings/{name}']
