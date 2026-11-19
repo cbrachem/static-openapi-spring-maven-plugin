@@ -1,0 +1,284 @@
+openapi: 3.0.1
+info:
+  title: Library API
+  description: Mixed Java and Kotlin sample
+  version: "1.0"
+tags:
+- name: authors
+  description: Kotlin controller
+- name: books
+  description: Java controller
+paths:
+  /authors:
+    get:
+      tags:
+      - authors
+      summary: Search authors
+      operationId: search
+      parameters:
+      - name: query
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - name: activeOnly
+        in: query
+        required: true
+        schema:
+          type: boolean
+      - name: X-Trace-Id
+        in: header
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Author"
+  /authors/{id}:
+    get:
+      tags:
+      - authors
+      operationId: find
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Author"
+    put:
+      tags:
+      - authors
+      operationId: update
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Author"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Author"
+  /authors/{id}/books:
+    get:
+      tags:
+      - authors
+      operationId: books
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Book"
+  /books:
+    get:
+      tags:
+      - books
+      summary: Search books
+      operationId: search_1
+      parameters:
+      - name: title
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: genre
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - FICTION
+          - NON_FICTION
+          - SCIENCE
+      - name: limit
+        in: query
+        description: Page size
+        required: false
+        schema:
+          maximum: 100
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Book"
+    post:
+      tags:
+      - books
+      operationId: create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Book"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+      security:
+      - bearer: []
+  /books/{id}:
+    get:
+      tags:
+      - books
+      operationId: find_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Book"
+        "404":
+          description: Book not found
+    delete:
+      tags:
+      - books
+      operationId: delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: No Content
+      security:
+      - bearer: []
+  /books/{id}/cover:
+    post:
+      tags:
+      - books
+      operationId: uploadCover
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+              - cover
+              type: object
+              properties:
+                cover:
+                  type: string
+                  format: binary
+        required: true
+      responses:
+        "204":
+          description: No Content
+components:
+  schemas:
+    Author:
+      required:
+      - id
+      - name
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        biography:
+          type: string
+          description: "Nullable in Kotlin, therefore not required"
+        active:
+          type: boolean
+          default: true
+    Book:
+      required:
+      - author
+      - genre
+      - title
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+        title:
+          maxLength: 200
+          minLength: 0
+          type: string
+        author:
+          $ref: "#/components/schemas/Author"
+        publishedOn:
+          type: string
+          format: date
+        genre:
+          type: string
+          enum:
+          - FICTION
+          - NON_FICTION
+          - SCIENCE
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer

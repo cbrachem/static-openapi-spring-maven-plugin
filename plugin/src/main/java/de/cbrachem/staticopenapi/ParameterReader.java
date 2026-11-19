@@ -9,10 +9,13 @@ import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import java.lang.reflect.Method;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.stream.Stream;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -36,7 +39,10 @@ final class ParameterReader {
   private static final Set<String> FRAMEWORK_PACKAGES = Set.of("java.", "javax.", "jakarta.", "kotlin.", "kotlinx.",
       "reactor.", "org.springframework.");
 
-  private final GeneratorConfig config;
+    // Spring resolves these simple types from the request context, not from a query parameter.
+    private static final List<Class<?>> CONTEXT_TYPES = List.of(Locale.class, TimeZone.class, ZoneId.class);
+
+    private final GeneratorConfig config;
   private final Components components;
 
   ParameterReader(GeneratorConfig config, Components components) {
@@ -103,6 +109,8 @@ final class ParameterReader {
     } else if (requestParam.isPresent()) {
       var param = requestParam.get();
       add(operation, parameter, "query", param.name(), param.required(), param.defaultValue());
+    } else if (CONTEXT_TYPES.stream().anyMatch(type -> type.isAssignableFrom(parameter.rawType()))) {
+        return;
     } else if (BeanUtils.isSimpleProperty(parameter.rawType())) {
       add(operation, parameter, "query", "", false, ValueConstants.DEFAULT_NONE);
     } else if (parameter.annotation(ModelAttribute.class).isPresent() || !isFrameworkType(parameter.rawType())) {

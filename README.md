@@ -48,6 +48,14 @@ cat sample/target/openapi/openapi.yaml
 
 The sample is a Spring Boot application with one Java controller and one Kotlin controller.
 
+## Tests
+
+- `plugin/src/test`: unit tests with Java and Kotlin fixtures.
+- `plugin/src/it`: a Maven integration test with the `maven-invoker-plugin`. It runs the goal in a multi-module build.
+- `sample/src/test`: the generated document must match `expected-openapi.yaml` and must be valid OpenAPI.
+
+`mvn install` runs all tests. After an intended change of the sample output, copy `sample/target/openapi/openapi.yaml` to `sample/src/test/resources/expected-openapi.yaml`.
+
 ## Supported
 
 - `@RestController`, `@Controller` with `@ResponseBody`, composed annotations, mappings on interfaces and generic base types.

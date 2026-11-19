@@ -1,6 +1,7 @@
 package de.cbrachem.staticopenapi;
 
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -34,7 +35,9 @@ final class ReturnTypes {
       return Optional.empty();
     }
     if (WRAPPERS.contains(name)) {
-      return resolvable.hasGenerics() ? bodyType(resolvable.getGeneric(0).getType()) : Optional.empty();
+        var wrapped = resolvable.getGeneric(0).getType();
+        boolean isRawWrapper = !resolvable.hasGenerics() || wrapped instanceof TypeVariable;
+        return isRawWrapper ? Optional.empty() : bodyType(wrapped);
     }
     if (STREAMS.contains(name)) {
       return Optional.of(ResolvableType.forClassWithGenerics(List.class, resolvable.getGeneric(0)).getType());

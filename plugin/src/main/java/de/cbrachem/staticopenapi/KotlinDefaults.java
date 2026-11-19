@@ -19,6 +19,7 @@ import org.springframework.asm.MethodVisitor;
 import org.springframework.asm.Opcodes;
 import org.springframework.asm.SpringAsmInfo;
 import org.springframework.asm.Type;
+import org.springframework.util.ClassUtils;
 
 /**
  * Reads constant default values of Kotlin parameters from the bytecode.
@@ -36,32 +37,13 @@ final class KotlinDefaults {
 
     /** Returns the default values by parameter index. */
     static Map<Integer, Object> of(Executable executable) {
-        var owner = executable.getDeclaringClass();
         var parameters = Type.getArgumentTypes(executable instanceof Constructor<?> constructor
                 ? Type.getConstructorDescriptor(constructor)
                 : Type.getMethodDescriptor((Method) executable));
-        var syntheticName = executable instanceof Constructor ? "<init>" : executable.getName() + "$default";
-        var syntheticDescriptor = executable instanceof Constructor
-                ? descriptor(Type.VOID_TYPE, Stream.empty(), parameters, "kotlin/jvm/internal/DefaultConstructorMarker")
-                : descriptor(Type.getReturnType((Method) executable), Stream.of(Type.getType(owner)), parameters, "java/lang/Object");
-
-        var bySlot = new HashMap<Integer, Object>();
-        var visitor = new ClassVisitor(SpringAsmInfo.ASM_VERSION) {
-            @Override
-            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-                boolean isSynthetic = name.equals(syntheticName) && descriptor.equals(syntheticDescriptor);
-                return isSynthetic ? new DefaultsVisitor(bySlot) : null;
-            }
-        };
-        var resource = owner.getName().substring(owner.getName().lastIndexOf('.') + 1) + ".class";
-        try (var bytecode = owner.getResourceAsStream(resource)) {
-            if (bytecode == null) {
-                return Map.of();
-            }
-            new ClassReader(bytecode).accept(visitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        var bySlot = executable instanceof Method method
+                ? slotsOfFunction(method, parameters)
+                : slots(executable.getDeclaringClass(), "", "<init>",
+                        descriptor(Type.VOID_TYPE, Stream.empty(), parameters, "kotlin/jvm/internal/DefaultConstructorMarker"));
 
         var defaults = new HashMap<Integer, Object>();
         int slot = 1;
@@ -74,6 +56,41 @@ final class KotlinDefaults {
             slot += parameters[index].getSize();
         }
         return Map.copyOf(defaults);
+    }
+
+    // An override inherits the defaults. They are in the declaring supertype, or in its DefaultImpls class.
+    private static Map<Integer, Object> slotsOfFunction(Method method, Type[] parameters) {
+        var declaringType = method.getDeclaringClass();
+        var owners = Stream.concat(
+                Stream.<Class<?>>iterate(declaringType, type -> type != null && type != Object.class, Class::getSuperclass),
+                ClassUtils.getAllInterfacesForClassAsSet(declaringType).stream());
+        return owners
+                .flatMap(owner -> Stream.of("", "$DefaultImpls").map(holder -> slots(
+                        owner, holder, method.getName() + "$default",
+                        descriptor(Type.getReturnType(method), Stream.of(Type.getType(owner)), parameters, "java/lang/Object"))))
+                .filter(slots -> !slots.isEmpty())
+                .findFirst()
+                .orElse(Map.of());
+    }
+
+    private static Map<Integer, Object> slots(Class<?> owner, String holderSuffix, String methodName, String methodDescriptor) {
+        var bySlot = new HashMap<Integer, Object>();
+        var visitor = new ClassVisitor(SpringAsmInfo.ASM_VERSION) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                boolean isSynthetic = name.equals(methodName) && descriptor.equals(methodDescriptor);
+                return isSynthetic ? new DefaultsVisitor(bySlot) : null;
+            }
+        };
+        var resource = owner.getName().substring(owner.getName().lastIndexOf('.') + 1) + holderSuffix + ".class";
+        try (var bytecode = owner.getResourceAsStream(resource)) {
+            if (bytecode != null) {
+                new ClassReader(bytecode).accept(visitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return bySlot;
     }
 
     private static String descriptor(Type returnType, Stream<Type> receiver, Type[] parameters, String markerType) {
