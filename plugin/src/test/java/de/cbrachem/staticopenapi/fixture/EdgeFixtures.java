@@ -53,6 +53,8 @@ public final class EdgeFixtures {
 
     public record Address(String street, String city) {}
 
+    public record Payload(com.fasterxml.jackson.databind.JsonNode legacy, tools.jackson.databind.node.ObjectNode modern) {}
+
     public static class Customer {
         public String name;
 
@@ -163,6 +165,16 @@ public final class EdgeFixtures {
 
         @GetMapping("/customer")
         public Customer customer() {
+            return null;
+        }
+
+        @GetMapping("/payload")
+        public Payload payload() {
+            return null;
+        }
+
+        @GetMapping("/json")
+        public tools.jackson.databind.JsonNode json() {
             return null;
         }
     }

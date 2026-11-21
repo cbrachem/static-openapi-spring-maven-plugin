@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.module.kotlin.KotlinModule;
 import io.swagger.v3.core.converter.AnnotatedType;
+import io.swagger.v3.core.converter.ModelConverter;
 import io.swagger.v3.core.converter.ModelConverterContext;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.util.Json31;
@@ -17,9 +18,12 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.io.InputStreamSource;
 
@@ -29,6 +33,10 @@ final class Schemas {
             "jakarta.servlet.http.Part",
             "javax.servlet.http.Part",
             "org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody");
+
+    private static final Set<String> JSON_NODE_TYPES = Set.of(
+            "com.fasterxml.jackson.databind.JsonNode",
+            "tools.jackson.databind.JsonNode");
 
     static {
         var mapper = Json31.mapper();
@@ -51,6 +59,18 @@ final class Schemas {
         converters.addConverter(new KotlinModelConverter());
         converters.addConverter(new NullnessModelConverter(!config.jackson2Defaults()));
         converters.addConverter(new Jackson3Bridge());
+        converters.addConverter(Schemas::anyJsonValue);
+    }
+
+    // A JsonNode holds any JSON value. Without this, swagger-core describes the getters of JsonNode.
+    @SuppressWarnings("rawtypes")
+    private static Schema anyJsonValue(AnnotatedType type, ModelConverterContext context, Iterator<ModelConverter> chain) {
+        var rawType = mapper().constructType(type.getType()).getRawClass();
+        if (Stream.<Class<?>>iterate(rawType, Objects::nonNull, Class::getSuperclass)
+                .anyMatch(candidate -> JSON_NODE_TYPES.contains(candidate.getName()))) {
+            return new JsonSchema();
+        }
+        return chain.hasNext() ? chain.next().resolve(type, context, chain) : null;
     }
 
 

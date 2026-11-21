@@ -71,6 +71,7 @@ The workflow needs the repository secrets `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`
 - `@OpenAPIDefinition`, `@Operation`, `@Parameter`, `@ApiResponse`, `@Schema`, `@Tag`, `@SecurityScheme`, `@SecurityRequirement`, `@Hidden`.
 - Java: JSpecify nullness through the Spring `Nullness` API. A `@Nullable` parameter is not required. A non-null reference property is required, for example in `@NullMarked` code.
 - Jackson 3 defaults of Spring Boot 4: a primitive record component or creator parameter is required. Enum values use `toString()`. `jackson2Defaults` reverts both rules.
+- `JsonNode` from Jackson 2 or 3 and its subtypes, for example `ObjectNode`, become the empty schema `{}`, so any JSON value is valid.
 - Jackson 3 annotations: `@JsonNaming` with a standard strategy and `@JsonSerialize(as = ...)` from `tools.jackson.databind.annotation`.
 - Nullability in the type: a nullable Kotlin or JSpecify property or parameter gets `type: [<type>, "null"]`. A nullable reference gets `anyOf` with `$ref` and the null type.
 - Kotlin: a nullable parameter or a parameter with a default value is not required. `suspend` functions work.

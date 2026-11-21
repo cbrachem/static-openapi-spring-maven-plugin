@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.tuple;
 
 import de.cbrachem.staticopenapi.fixture.EdgeFixtures;
 import de.cbrachem.staticopenapi.fixture.KotlinEdgeController;
+import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -84,6 +85,15 @@ class EdgeCasesTest {
 
         Schema<?> customer = schemas.get("Customer");
         assertThat(customer.getProperties()).containsOnlyKeys("name", "street", "city");
+    }
+
+    @Test
+    void describesJsonNodeAsAnyValue() {
+        var schemas = openApi.getComponents().getSchemas();
+        assertThat(schemas.get("Payload").getProperties().values())
+                .allSatisfy(property -> assertThat(Json31.pretty(property)).isEqualTo("{ }"));
+        assertThat(Json31.pretty(responseSchema("/returns/json"))).isEqualTo("{ }");
+        assertThat(schemas.keySet()).noneMatch(name -> name.endsWith("Node"));
     }
 
     @Test
