@@ -69,6 +69,7 @@ The workflow needs the repository secrets `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`
 - `@PathVariable`, `@RequestParam`, `@RequestHeader`, `@CookieValue`, `@RequestBody`, `@RequestPart`, `MultipartFile`, `@ModelAttribute`.
 - `@ResponseStatus`, `ResponseEntity<T>`, `Optional<T>`, `CompletableFuture<T>`, `Mono<T>`, `Flux<T>`, `Flow<T>`.
 - `@OpenAPIDefinition`, `@Operation`, `@Parameter`, `@ApiResponse`, `@Schema`, `@Tag`, `@SecurityScheme`, `@SecurityRequirement`, `@Hidden`.
+- A response without `description` gets the HTTP reason phrase, for example `Not Found`. A range like `4XX` gets `Client Error`, and `default` gets `Default Response`.
 - Java: JSpecify nullness through the Spring `Nullness` API. A `@Nullable` parameter is not required. A non-null reference property is required, for example in `@NullMarked` code.
 - Jackson 3 defaults of Spring Boot 4: a primitive record component or creator parameter is required. Enum values use `toString()`. `jackson2Defaults` reverts both rules.
 - `JsonNode` from Jackson 2 or 3 and its subtypes, for example `ObjectNode`, become the empty schema `{}`, so any JSON value is valid.

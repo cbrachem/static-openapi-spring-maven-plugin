@@ -18,6 +18,7 @@ import io.swagger.v3.oas.models.responses.ApiResponses;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import java.util.stream.Stream;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.core.MethodIntrospector;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -38,6 +40,9 @@ final class OperationReader {
     private final GeneratorConfig config;
     private final OpenAPI openApi;
     private final ParameterReader parameterReader;
+    private static final Map<Character, String> SERIES = Map.of(
+            '1', "Informational", '2', "Successful", '3', "Redirection", '4', "Client Error", '5', "Server Error");
+
     private final Set<String> operationIds = new HashSet<>();
 
     OperationReader(GeneratorConfig config, OpenAPI openApi) {
@@ -114,6 +119,7 @@ final class OperationReader {
                                         io.swagger.v3.oas.annotations.responses.ApiResponse.class,
                                         io.swagger.v3.oas.annotations.responses.ApiResponses.class)
                                 .stream()))
+                .map(OperationReader::withDescription)
                 .toArray(io.swagger.v3.oas.annotations.responses.ApiResponse[]::new);
 
         var responses = OperationParser.getApiResponses(declared, null, null, openApi.getComponents(), null, true, ApiResponses.DEFAULT)
@@ -139,6 +145,25 @@ final class OperationReader {
         var sorted = new ApiResponses();
         sorted.putAll(new TreeMap<>(responses));
         return sorted;
+    }
+
+    // OpenAPI requires a response description. swagger-core drops a declared response without one.
+    private static io.swagger.v3.oas.annotations.responses.ApiResponse withDescription(
+            io.swagger.v3.oas.annotations.responses.ApiResponse response) {
+        if (!response.description().isEmpty() || !response.ref().isEmpty()) {
+            return response;
+        }
+        var attributes = new HashMap<>(MergedAnnotation.from(response).asMap());
+        attributes.put("description", describe(response.responseCode()));
+        return MergedAnnotation.of(io.swagger.v3.oas.annotations.responses.ApiResponse.class, attributes).synthesize();
+    }
+
+    private static String describe(String responseCode) {
+        if (!responseCode.matches("[1-5](XX|\\d\\d)")) {
+            return "Default Response";
+        }
+        var status = responseCode.endsWith("XX") ? null : HttpStatus.resolve(Integer.parseInt(responseCode));
+        return status != null ? status.getReasonPhrase() : SERIES.get(responseCode.charAt(0));
     }
 
     private List<String> tags(Class<?> controller, Method method,

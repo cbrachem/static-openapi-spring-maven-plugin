@@ -220,6 +220,16 @@ public final class EdgeFixtures {
             return null;
         }
 
+        @GetMapping("/undescribed")
+        @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = Item.class)))
+        @ApiResponse(responseCode = "404")
+        @ApiResponse(responseCode = "499")
+        @ApiResponse(responseCode = "5XX")
+        @ApiResponse(responseCode = "default")
+        public Item undescribed() {
+            return null;
+        }
+
         @PostMapping("/body")
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
                 description = "The item", content = @Content(schema = @Schema(implementation = Item.class)))

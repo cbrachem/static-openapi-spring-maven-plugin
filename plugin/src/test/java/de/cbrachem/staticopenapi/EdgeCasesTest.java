@@ -118,6 +118,11 @@ class EdgeCasesTest {
         assertThat(described.getResponses().get("200").getContent().get("application/json").getSchema().get$ref()).endsWith("/Item");
         assertThat(described.getSecurity()).singleElement().extracting(Map::keySet).asString().contains("bearer");
 
+        assertThat(get("/swagger/undescribed").getResponses()).extractingFromEntries(Map.Entry::getKey, entry -> entry.getValue().getDescription())
+                .containsExactly(
+                        tuple("200", "OK"), tuple("404", "Not Found"), tuple("499", "Client Error"),
+                        tuple("5XX", "Server Error"), tuple("default", "Default Response"));
+
         var body = operation("/swagger/body", PathItem.HttpMethod.POST).getRequestBody();
         assertThat(body.getDescription()).isEqualTo("The item");
         assertThat(body.getRequired()).isTrue();
