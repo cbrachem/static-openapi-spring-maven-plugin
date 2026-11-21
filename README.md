@@ -69,6 +69,7 @@ The workflow needs the repository secrets `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`
 
 - `@RestController`, `@Controller` with `@ResponseBody`, composed annotations, mappings on interfaces and generic base types.
 - `@PathVariable`, `@RequestParam`, `@RequestHeader`, `@CookieValue`, `@RequestBody`, `@RequestPart`, `MultipartFile`, `@ModelAttribute`.
+- `@ParameterObject`: each property of the object becomes one query parameter. The plugin matches the annotation by its simple name. springdoc's `org.springdoc.core.annotations.ParameterObject` works, and so does an annotation that the project declares itself.
 - `@ResponseStatus`, `ResponseEntity<T>`, `Optional<T>`, `CompletableFuture<T>`, `Mono<T>`, `Flux<T>`, `Flow<T>`.
 - `@OpenAPIDefinition`, `@Operation`, `@Parameter`, `@ApiResponse`, `@Schema`, `@Tag`, `@SecurityScheme`, `@SecurityRequirement`, `@Hidden`.
 - A response without `description` gets the HTTP reason phrase, for example `Not Found`. A range like `4XX` gets `Client Error`, and `default` gets `Default Response`.
@@ -87,6 +88,7 @@ The workflow needs the repository secrets `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`
 - `@Conditional`, `@Profile` and routes that the application registers in code are not visible.
 - `ObjectMapper` configuration is not visible. Only annotations on the classes apply.
 - `${...}` placeholders in paths stay as they are.
+- `@ParameterObject` does not flatten nested objects. A nested object stays one query parameter with a `$ref`.
 - The plugin reads Kotlin default values from the bytecode. A computed default, for example `LocalDate.now()`, gives no schema `default`. Set `@Schema(defaultValue = ...)` in that case.
 - One schema describes a class for requests and responses. A Kotlin property with a default value is thus optional in responses too.
 - A primitive property with a setter is not required, because Jackson keeps its initial value.

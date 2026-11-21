@@ -17,6 +17,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
@@ -52,6 +56,15 @@ public final class EdgeFixtures {
     public record Page<T>(List<T> items, long total) {}
 
     public record Address(String street, String city) {}
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.PARAMETER)
+    public @interface ParameterObject {}
+
+    public record Search(
+            @Schema(description = "Search text", requiredMode = Schema.RequiredMode.REQUIRED) String text,
+            Integer limit,
+            Address near) {}
 
     public record Payload(com.fasterxml.jackson.databind.JsonNode legacy, tools.jackson.databind.node.ObjectNode modern) {}
 
@@ -202,6 +215,9 @@ public final class EdgeFixtures {
 
         @GetMapping("/list")
         public void list(@RequestParam List<String> tags) {}
+
+        @GetMapping("/object")
+        public void object(@ParameterObject Search search, @RequestParam String extra) {}
     }
 
     @RestController

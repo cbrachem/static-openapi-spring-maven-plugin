@@ -108,6 +108,18 @@ class EdgeCasesTest {
     }
 
     @Test
+    void expandsParameterObject() {
+        assertThat(parameters("/params/object")).containsExactly(
+                tuple("text", "query", true), tuple("limit", "query", false), tuple("near", "query", false),
+                tuple("extra", "query", true));
+        var parameters = get("/params/object").getParameters();
+        assertThat(parameters.get(0).getDescription()).isEqualTo("Search text");
+        assertThat(parameters.get(0).getSchema().getDescription()).isNull();
+        assertThat(parameters.get(2).getSchema().get$ref()).endsWith("/Address");
+        assertThat(openApi.getComponents().getSchemas()).containsKey("Address").doesNotContainKey("Search");
+    }
+
+    @Test
     void filtersPaths() {
         var filtered = OpenApiGenerator.generate(
                 List.of(EdgeFixtures.MappingController.class, EdgeFixtures.ParamController.class),

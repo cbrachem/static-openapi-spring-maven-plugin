@@ -112,6 +112,8 @@ final class ParameterReader {
       add(operation, parameter, "query", param.name(), param.required(), param.defaultValue());
     } else if (CONTEXT_TYPES.stream().anyMatch(type -> type.isAssignableFrom(parameter.rawType()))) {
         return;
+    } else if (isParameterObject(parameter)) {
+      addParameterObject(operation, parameter);
     } else if (BeanUtils.isSimpleProperty(parameter.rawType())) {
       add(operation, parameter, "query", "", false, ValueConstants.DEFAULT_NONE);
     } else if (parameter.annotation(ModelAttribute.class).isPresent() || !isFrameworkType(parameter.rawType())) {
@@ -140,6 +142,32 @@ final class ParameterReader {
           result.setSchema(parameter.nullable() && !in.equals("path") ? Schemas.nullable(schema) : schema);
       }
       operation.addParametersItem(result);
+  }
+
+  // Like springdoc's @ParameterObject: each property of the object becomes one query parameter.
+  private void addParameterObject(Operation operation, HandlerParameter parameter) {
+    var scratch = new Components();
+    var ref = Schemas.resolve(parameter.type(), parameter.annotations(), scratch).get$ref();
+    var modelName = ref == null ? null : ref.substring(ref.lastIndexOf('/') + 1);
+    Schema<?> model = modelName == null || scratch.getSchemas() == null ? null : scratch.getSchemas().get(modelName);
+
+    if (model == null || model.getProperties() == null) {
+      add(operation, parameter, "query", "", false, ValueConstants.DEFAULT_NONE);
+      return;
+    }
+
+    scratch.getSchemas().forEach((name, schema) -> {
+      if (!name.equals(modelName)) {
+        components.addSchemas(name, schema);
+      }
+    });
+    var required = Optional.ofNullable(model.getRequired()).orElse(List.of());
+    model.getProperties().forEach((name, schema) -> operation.addParametersItem(new Parameter()
+        .in("query")
+        .name(name)
+        .required(required.contains(name))
+        .description(schema.getDescription())
+        .schema(schema.description(null))));
   }
 
   private void addFormPart(Schema<?> form, HandlerParameter parameter, String annotationName, boolean required) {
@@ -213,6 +241,12 @@ final class ParameterReader {
         || parameter.annotation(io.swagger.v3.oas.annotations.Parameter.class)
             .map(io.swagger.v3.oas.annotations.Parameter::hidden).orElse(false)
         || IGNORED_ANNOTATIONS.stream().anyMatch(parameter::isAnnotated);
+  }
+
+  // Matched by simple name: springdoc's annotation or one that the project declares itself.
+  private static boolean isParameterObject(HandlerParameter parameter) {
+    return parameter.annotations().stream()
+        .anyMatch(annotation -> annotation.annotationType().getSimpleName().equals("ParameterObject"));
   }
 
   private static boolean isFrameworkType(Class<?> type) {
