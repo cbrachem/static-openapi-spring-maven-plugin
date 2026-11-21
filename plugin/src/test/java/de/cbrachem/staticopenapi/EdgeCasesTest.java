@@ -108,6 +108,18 @@ class EdgeCasesTest {
     }
 
     @Test
+    void filtersPaths() {
+        var filtered = OpenApiGenerator.generate(
+                List.of(EdgeFixtures.MappingController.class, EdgeFixtures.ParamController.class),
+                new GeneratorConfig("t", "0", null, false, List.of("/a/**", "/params/**"), List.of("/a/files/**", "/params/c*")));
+        assertThat(filtered.getPaths().keySet())
+                .isNotEmpty()
+                .allMatch(path -> path.startsWith("/a/") || path.startsWith("/params/"))
+                .contains("/a/any", "/params/model")
+                .doesNotContain("/a/files/{rest}", "/params/cookie", "/b/any");
+    }
+
+    @Test
     void appliesSwaggerAnnotations() {
         assertThat(openApi.getPaths()).doesNotContainKey("/swagger/hidden");
 

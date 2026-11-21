@@ -71,6 +71,17 @@ public class GenerateMojo extends AbstractMojo {
   @Parameter(defaultValue = "false", property = "staticOpenapi.jackson2Defaults")
   private boolean jackson2Defaults;
 
+  /**
+   * Ant patterns of the paths to include, for example {@code /api/**}. When empty,
+   * the plugin includes all paths.
+   */
+  @Parameter(property = "staticOpenapi.pathsToMatch")
+  private List<String> pathsToMatch = List.of();
+
+  /** Ant patterns of the paths to exclude, for example {@code /internal/**}. */
+  @Parameter(property = "staticOpenapi.pathsToExclude")
+  private List<String> pathsToExclude = List.of();
+
   @Parameter(defaultValue = "false", property = "staticOpenapi.skip")
   private boolean skip;
 
@@ -91,7 +102,7 @@ public class GenerateMojo extends AbstractMojo {
       Thread.currentThread().setContextClassLoader(loader);
 
       var classes = ClassScanner.scan(scanPath, basePackages, loader);
-      var config = new GeneratorConfig(title, version, defaultMediaType, jackson2Defaults);
+      var config = new GeneratorConfig(title, version, defaultMediaType, jackson2Defaults, pathsToMatch, pathsToExclude);
       var openApi = OpenApiGenerator.generate(classes, config);
 
       getLog().info("Found " + openApi.getPaths().size() + " paths in " + classes.size() + " classes.");

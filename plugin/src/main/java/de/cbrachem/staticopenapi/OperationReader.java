@@ -37,12 +37,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 final class OperationReader {
 
-    private final GeneratorConfig config;
-    private final OpenAPI openApi;
-    private final ParameterReader parameterReader;
     private static final Map<Character, String> SERIES = Map.of(
             '1', "Informational", '2', "Successful", '3', "Redirection", '4', "Client Error", '5', "Server Error");
 
+    private final GeneratorConfig config;
+    private final OpenAPI openApi;
+    private final ParameterReader parameterReader;
     private final Set<String> operationIds = new HashSet<>();
 
     OperationReader(GeneratorConfig config, OpenAPI openApi) {
@@ -64,7 +64,7 @@ final class OperationReader {
                 .sorted(Comparator.comparing(handler -> handler.getKey().toGenericString()))
                 .forEach(handler -> {
                     var mapping = Mapping.of(typeMapping, handler.getValue());
-                    mapping.paths().forEach(path -> mapping.methods().forEach(httpMethod -> pathItem(path)
+                    mapping.paths().stream().filter(config::includesPath).forEach(path -> mapping.methods().forEach(httpMethod -> pathItem(path)
                             .operation(httpMethod, operation(controller, handler.getKey(), mapping))));
                 });
     }
