@@ -18,11 +18,11 @@ import java.util.TreeMap;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.stereotype.Controller;
 
-public final class OpenApiGenerator {
+final class OpenApiGenerator {
 
     private OpenApiGenerator() {}
 
-    public static OpenAPI generate(List<Class<?>> classes, GeneratorConfig config) {
+    static OpenAPI generate(List<Class<?>> classes, GeneratorConfig config) {
         Schemas.configure(config);
         var openApi = definition(classes, config).components(new Components()).paths(new Paths());
 

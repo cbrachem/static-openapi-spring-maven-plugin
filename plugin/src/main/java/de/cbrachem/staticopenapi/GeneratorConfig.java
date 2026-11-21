@@ -5,9 +5,9 @@ import java.util.List;
 /**
  * @param jackson2Defaults true when the application sets {@code spring.jackson.use-jackson2-defaults=true}
  */
-public record GeneratorConfig(String title, String version, String defaultMediaType, boolean jackson2Defaults) {
+record GeneratorConfig(String title, String version, String defaultMediaType, boolean jackson2Defaults) {
 
-    public GeneratorConfig {
+    GeneratorConfig {
         defaultMediaType = defaultMediaType == null ? "application/json" : defaultMediaType;
     }
 

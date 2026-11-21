@@ -7,13 +7,13 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class ClassScanner {
+final class ClassScanner {
 
     private static final Logger log = LoggerFactory.getLogger(ClassScanner.class);
 
     private ClassScanner() {}
 
-    public static List<Class<?>> scan(List<Path> classpath, List<String> basePackages, ClassLoader loader) {
+    static List<Class<?>> scan(List<Path> classpath, List<String> basePackages, ClassLoader loader) {
         var graph = new ClassGraph()
                 .overrideClasspath(classpath)
                 .enableClassInfo()
