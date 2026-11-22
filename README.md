@@ -93,6 +93,7 @@ The workflow needs the repository secrets `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`
 - `@Conditional`, `@Profile` and routes that the application registers in code are not visible.
 - `ObjectMapper` configuration is not visible. Only annotations on the classes apply.
 - `${...}` placeholders in paths stay as they are.
+- An `@ApiResponse` without `responseCode` is the `default` response, because swagger-core uses `"default"` as the default value. To describe the content of the success response, set `responseCode`, for example `"200"`.
 - `@ParameterObject` does not flatten nested objects. A nested object stays one query parameter with a `$ref`.
 - The plugin reads Kotlin default values from the bytecode. A computed default, for example `LocalDate.now()`, gives no schema `default`. Set `@Schema(defaultValue = ...)` in that case.
 - One schema describes a class for requests and responses. A Kotlin property with a default value is thus optional in responses too.
