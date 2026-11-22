@@ -283,4 +283,25 @@ public final class EdgeFixtures {
             return List.of();
         }
     }
+
+    public record Schedule(
+            java.time.YearMonth month,
+            java.time.Year year,
+            java.time.MonthDay day,
+            java.time.ZoneId zone,
+            java.time.ZoneOffset offset,
+            java.time.Period period,
+            java.time.Duration duration,
+            java.time.LocalDate date) {}
+
+    public record ScheduleQuery(java.time.YearMonth from) {}
+
+    @RestController
+    @RequestMapping("/time")
+    public static class TimeController {
+        @GetMapping
+        public Schedule schedule(@RequestParam java.time.YearMonth month, @ParameterObject ScheduleQuery query) {
+            return null;
+        }
+    }
 }

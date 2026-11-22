@@ -18,9 +18,16 @@ import io.swagger.v3.oas.models.media.Schema;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.time.MonthDay;
+import java.time.Period;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -38,6 +45,14 @@ final class Schemas {
     private static final Set<String> JSON_NODE_TYPES = Set.of(
             "com.fasterxml.jackson.databind.JsonNode",
             "tools.jackson.databind.JsonNode");
+
+    private static final Map<Class<?>, String> JAVA_TIME_TYPES = Map.of(
+            YearMonth.class, "string",
+            MonthDay.class, "string",
+            Year.class, "integer",
+            ZoneId.class, "string",
+            ZoneOffset.class, "string",
+            Period.class, "string");
 
     static {
         var mapper = Json31.mapper();
@@ -61,16 +76,20 @@ final class Schemas {
         converters.addConverter(new KotlinModelConverter());
         converters.addConverter(new NullnessModelConverter(!config.jackson2Defaults()));
         converters.addConverter(new Jackson3Bridge());
-        converters.addConverter(Schemas::anyJsonValue);
+        converters.addConverter(Schemas::scalarValue);
     }
 
-    // A JsonNode holds any JSON value. Without this, swagger-core describes the getters of JsonNode.
+    // A JsonNode holds any JSON value, and Jackson writes some java.time types as one value.
+    // Without this, swagger-core describes their getters.
     @SuppressWarnings("rawtypes")
-    private static Schema anyJsonValue(AnnotatedType type, ModelConverterContext context, Iterator<ModelConverter> chain) {
+    private static Schema scalarValue(AnnotatedType type, ModelConverterContext context, Iterator<ModelConverter> chain) {
         var rawType = mapper().constructType(type.getType()).getRawClass();
         if (Stream.<Class<?>>iterate(rawType, Objects::nonNull, Class::getSuperclass)
                 .anyMatch(candidate -> JSON_NODE_TYPES.contains(candidate.getName()))) {
             return new JsonSchema();
+        }
+        if (JAVA_TIME_TYPES.containsKey(rawType)) {
+            return new JsonSchema().typesItem(JAVA_TIME_TYPES.get(rawType));
         }
         return chain.hasNext() ? chain.next().resolve(type, context, chain) : null;
     }

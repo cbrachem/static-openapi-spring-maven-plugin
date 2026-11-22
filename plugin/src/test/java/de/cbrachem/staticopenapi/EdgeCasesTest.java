@@ -15,6 +15,7 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
@@ -144,6 +145,30 @@ class EdgeCasesTest {
                 .containsExactly(tuple("name", false, null), tuple("tier", false, "#/components/schemas/Tier"));
         assertThat(withRefs.getPaths().get("/tiers/accounts").getGet().getParameters().get(0).getSchema().get$ref())
                 .isEqualTo("#/components/schemas/Tier");
+    }
+
+    @Test
+    void describesJavaTimeValuesAsScalars() {
+        var time = OpenApiGenerator.generate(
+                List.of(EdgeFixtures.TimeController.class), new GeneratorConfig("t", "0", null, false));
+
+        var schemas = time.getComponents().getSchemas();
+        assertThat(schemas).containsOnlyKeys("Schedule");
+        Schema<?> schedule = schemas.get("Schedule");
+        assertThat(schedule.getProperties().entrySet())
+                .extracting(entry -> entry.getKey(), entry -> entry.getValue().getTypes(), entry -> entry.getValue().getFormat())
+                .containsExactly(
+                        tuple("month", Set.of("string"), null),
+                        tuple("year", Set.of("integer"), null),
+                        tuple("day", Set.of("string"), null),
+                        tuple("zone", Set.of("string"), null),
+                        tuple("offset", Set.of("string"), null),
+                        tuple("period", Set.of("string"), null),
+                        tuple("duration", Set.of("string"), "duration"),
+                        tuple("date", Set.of("string"), "date"));
+        assertThat(time.getPaths().get("/time").getGet().getParameters())
+                .extracting(Parameter::getName, parameter -> parameter.getSchema().getTypes())
+                .containsExactly(tuple("month", Set.of("string")), tuple("from", Set.of("string")));
     }
 
     @Test
