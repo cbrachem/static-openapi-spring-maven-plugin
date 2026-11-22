@@ -17,7 +17,7 @@ The plugin does not start the application and does not create a Spring context.
 <plugin>
   <groupId>de.cbrachem</groupId>
   <artifactId>static-openapi-spring-maven-plugin</artifactId>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <executions>
     <execution>
       <goals>
