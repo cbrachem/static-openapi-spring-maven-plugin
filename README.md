@@ -39,6 +39,7 @@ The plugin does not start the application and does not create a Spring context.
 | `jackson2Defaults` | `false` | Set to `true` when the application sets `spring.jackson.use-jackson2-defaults=true`. |
 | `pathsToMatch` | empty | Ant patterns of the paths to include, for example `/api/**`. When empty, the plugin includes all paths. |
 | `pathsToExclude` | empty | Ant patterns of the paths to exclude, for example `/internal/**`. |
+| `enumsAsRef` | `false` | Describe each enum class as a component schema with a `$ref`, like `ModelResolver.enumsAsRef` in swagger-core. |
 | `skip` | `false` | Skips the goal. |
 
 ## Build and run the sample

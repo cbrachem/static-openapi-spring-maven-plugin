@@ -1,5 +1,6 @@
 package de.cbrachem.staticopenapi;
 
+import io.swagger.v3.core.jackson.ModelResolver;
 import io.swagger.v3.core.util.AnnotationsUtils;
 import io.swagger.v3.jaxrs2.SecurityParser;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
@@ -22,7 +23,17 @@ final class OpenApiGenerator {
 
     private OpenApiGenerator() {}
 
-    static OpenAPI generate(List<Class<?>> classes, GeneratorConfig config) {
+    // swagger-core keeps its configuration in static fields. The lock keeps parallel builds apart.
+    static synchronized OpenAPI generate(List<Class<?>> classes, GeneratorConfig config) {
+        var enumsAsRef = ModelResolver.enumsAsRef;
+        try {
+            return generateWithStaticConfig(classes, config);
+        } finally {
+            ModelResolver.enumsAsRef = enumsAsRef;
+        }
+    }
+
+    private static OpenAPI generateWithStaticConfig(List<Class<?>> classes, GeneratorConfig config) {
         Schemas.configure(config);
         var openApi = definition(classes, config).components(new Components()).paths(new Paths());
 

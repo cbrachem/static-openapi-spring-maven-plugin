@@ -50,6 +50,22 @@ class KotlinSupportTest {
                         tuple("createdOn", null));
     }
 
+    @Test
+    void describesEnumsAsRefsWithDefaults() {
+        var withRefs = OpenApiGenerator.generate(List.of(OrderController.class, Order.class),
+                new GeneratorConfig("Orders", "1.0", null, false, List.of(), List.of(), true));
+
+        Schema<?> sort = withRefs.getComponents().getSchemas().get("Sort");
+        assertThat(sort.getEnum()).extracting(Object::toString).containsExactly("NAME", "DATE");
+        Schema<?> order = withRefs.getComponents().getSchemas().get("Order");
+        Schema<?> property = order.getProperties().get("sort");
+        assertThat(property.get$ref()).isEqualTo("#/components/schemas/Sort");
+        assertThat(property.getDefault()).hasToString("DATE");
+        var parameter = withRefs.getPaths().get("/orders").getGet().getParameters().get(4).getSchema();
+        assertThat(parameter.get$ref()).isEqualTo("#/components/schemas/Sort");
+        assertThat(parameter.getDefault()).hasToString("NAME");
+    }
+
     private static String text(Object value) {
         return value == null ? null : value.toString();
     }

@@ -82,6 +82,13 @@ public class GenerateMojo extends AbstractMojo {
   @Parameter(property = "staticOpenapi.pathsToExclude")
   private List<String> pathsToExclude = List.of();
 
+  /**
+   * Set to true to describe each enum class as a component schema with a $ref,
+   * like ModelResolver.enumsAsRef in swagger-core.
+   */
+  @Parameter(defaultValue = "false", property = "staticOpenapi.enumsAsRef")
+  private boolean enumsAsRef;
+
   @Parameter(defaultValue = "false", property = "staticOpenapi.skip")
   private boolean skip;
 
@@ -102,7 +109,7 @@ public class GenerateMojo extends AbstractMojo {
       Thread.currentThread().setContextClassLoader(loader);
 
       var classes = ClassScanner.scan(scanPath, basePackages, loader);
-      var config = new GeneratorConfig(title, version, defaultMediaType, jackson2Defaults, pathsToMatch, pathsToExclude);
+      var config = new GeneratorConfig(title, version, defaultMediaType, jackson2Defaults, pathsToMatch, pathsToExclude, enumsAsRef);
       var openApi = OpenApiGenerator.generate(classes, config);
 
       getLog().info("Found " + openApi.getPaths().size() + " paths in " + classes.size() + " classes.");

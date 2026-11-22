@@ -8,6 +8,7 @@ import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverter;
 import io.swagger.v3.core.converter.ModelConverterContext;
 import io.swagger.v3.core.converter.ModelConverters;
+import io.swagger.v3.core.jackson.ModelResolver;
 import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.media.Content;
@@ -54,6 +55,7 @@ final class Schemas {
     static void configure(GeneratorConfig config) {
         // Jackson 3 writes enums with toString(). Jackson 2 writes the name.
         mapper().configure(SerializationFeature.WRITE_ENUMS_USING_TO_STRING, !config.jackson2Defaults());
+        ModelResolver.enumsAsRef = config.enumsAsRef();
         ModelConverters.reset();
         var converters = ModelConverters.getInstance(true);
         converters.addConverter(new KotlinModelConverter());
@@ -109,7 +111,7 @@ final class Schemas {
     }
 
     static void setDefault(Schema<?> schema, Object value) {
-        if (schema.get$ref() == null && schema.getDefault() == null) {
+        if (schema.getDefault() == null) {
             schema.setDefault(coerce(value, schema.getTypes() == null ? Set.<String>of() : schema.getTypes()));
         }
     }

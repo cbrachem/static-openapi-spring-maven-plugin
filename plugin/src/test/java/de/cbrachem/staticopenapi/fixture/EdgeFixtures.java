@@ -260,4 +260,27 @@ public final class EdgeFixtures {
                 extensions = @Extension(properties = @ExtensionProperty(name = "audience", value = "internal")))
         public void custom() {}
     }
+
+    public enum Tier { GOLD, SILVER }
+
+    public record Member(String name, Tier tier) {}
+
+    @org.jspecify.annotations.NullMarked
+    public record Account(String id, @org.jspecify.annotations.Nullable Tier tier) {}
+
+    public record MemberQuery(String name, Tier tier) {}
+
+    @RestController
+    @RequestMapping("/tiers")
+    public static class TierController {
+        @GetMapping("/customers")
+        public List<Member> customers(@ParameterObject MemberQuery query) {
+            return List.of();
+        }
+
+        @GetMapping("/accounts")
+        public List<Account> accounts(@RequestParam Optional<Tier> tier) {
+            return List.of();
+        }
+    }
 }

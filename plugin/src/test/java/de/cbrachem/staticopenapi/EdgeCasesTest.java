@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.tuple;
 
 import de.cbrachem.staticopenapi.fixture.EdgeFixtures;
 import de.cbrachem.staticopenapi.fixture.KotlinEdgeController;
+import io.swagger.v3.core.jackson.ModelResolver;
 import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 class EdgeCasesTest {
@@ -120,10 +122,35 @@ class EdgeCasesTest {
     }
 
     @Test
+    void describesSharedEnumAsRefOnlyWhenEnabled() {
+        List<Class<?>> classes = List.of(EdgeFixtures.TierController.class);
+        var inline = Json31.pretty(OpenApiGenerator.generate(classes, new GeneratorConfig("t", "0", null, false)));
+        var withRefs = OpenApiGenerator.generate(
+                classes, new GeneratorConfig("t", "0", null, false, List.of(), List.of(), true));
+
+        assertThat(ModelResolver.enumsAsRef).isFalse();
+        assertThat(Json31.pretty(OpenApiGenerator.generate(classes, new GeneratorConfig("t", "0", null, false))))
+                .isEqualTo(inline)
+                .doesNotContain("#/components/schemas/Tier");
+
+        var schemas = withRefs.getComponents().getSchemas();
+        assertThat(schemas.get("Tier").getEnum()).extracting(Object::toString).containsExactly("GOLD", "SILVER");
+        var refs = Pattern.compile("#/components/schemas/(\\w+)").matcher(Json31.pretty(withRefs)).results()
+                .map(match -> match.group(1)).toList();
+        assertThat(schemas.keySet()).containsAll(refs);
+        assertThat(refs).filteredOn("Tier"::equals).hasSize(4);
+        assertThat(withRefs.getPaths().get("/tiers/customers").getGet().getParameters())
+                .extracting(Parameter::getName, Parameter::getRequired, parameter -> parameter.getSchema().get$ref())
+                .containsExactly(tuple("name", false, null), tuple("tier", false, "#/components/schemas/Tier"));
+        assertThat(withRefs.getPaths().get("/tiers/accounts").getGet().getParameters().get(0).getSchema().get$ref())
+                .isEqualTo("#/components/schemas/Tier");
+    }
+
+    @Test
     void filtersPaths() {
         var filtered = OpenApiGenerator.generate(
                 List.of(EdgeFixtures.MappingController.class, EdgeFixtures.ParamController.class),
-                new GeneratorConfig("t", "0", null, false, List.of("/a/**", "/params/**"), List.of("/a/files/**", "/params/c*")));
+                new GeneratorConfig("t", "0", null, false, List.of("/a/**", "/params/**"), List.of("/a/files/**", "/params/c*"), false));
         assertThat(filtered.getPaths().keySet())
                 .isNotEmpty()
                 .allMatch(path -> path.startsWith("/a/") || path.startsWith("/params/"))
