@@ -73,6 +73,7 @@ The workflow needs the repository secrets `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`
 - `@ParameterObject`: each property of the object becomes one query parameter. The plugin matches the annotation by its simple name. springdoc's `org.springdoc.core.annotations.ParameterObject` works, and so does an annotation that the project declares itself.
 - `@ResponseStatus`, `ResponseEntity<T>`, `Optional<T>`, `CompletableFuture<T>`, `Mono<T>`, `Flux<T>`, `Flow<T>`.
 - `@OpenAPIDefinition`, `@Operation`, `@Parameter`, `@ApiResponse`, `@Schema`, `@Tag`, `@SecurityScheme`, `@SecurityRequirement`, `@Hidden`.
+- A duplicate operationId gets the suffix `_1`, `_2` and so on. The order is fixed: controllers by fully qualified class name, then methods by signature. The plugin logs a warning for each renamed operation.
 - A response without `description` gets the HTTP reason phrase, for example `Not Found`. A range like `4XX` gets `Client Error`, and `default` gets `Default Response`.
 - Java: JSpecify nullness through the Spring `Nullness` API. A `@Nullable` parameter is not required. A non-null reference property is required, for example in `@NullMarked` code.
 - Jackson 3 defaults of Spring Boot 4: a primitive record component or creator parameter is required. Enum values use `toString()`. `jackson2Defaults` reverts both rules.

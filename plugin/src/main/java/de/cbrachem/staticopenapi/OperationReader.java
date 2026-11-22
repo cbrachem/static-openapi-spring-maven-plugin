@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.core.MethodIntrospector;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -39,6 +41,8 @@ final class OperationReader {
 
     private static final Map<Character, String> SERIES = Map.of(
             '1', "Informational", '2', "Successful", '3', "Redirection", '4', "Client Error", '5', "Server Error");
+
+    private static final Logger log = LoggerFactory.getLogger(OperationReader.class);
 
     private final GeneratorConfig config;
     private final OpenAPI openApi;
@@ -94,7 +98,7 @@ final class OperationReader {
                 .operationId(uniqueOperationId(annotation
                         .map(io.swagger.v3.oas.annotations.Operation::operationId)
                         .filter(not(String::isEmpty))
-                        .orElse(method.getName())))
+                        .orElse(method.getName()), controller, method))
                 .tags(tags(controller, method, annotation))
                 .responses(responses(controller, method, returnType, mapping, annotation));
 
@@ -211,12 +215,17 @@ final class OperationReader {
                 Stream.concat(onOperation, declared).toArray(SecurityRequirement[]::new));
     }
 
-    private String uniqueOperationId(String base) {
-        return Stream.iterate(0, i -> i + 1)
+    private String uniqueOperationId(String base, Class<?> controller, Method method) {
+        var unique = Stream.iterate(0, i -> i + 1)
                 .map(i -> i == 0 ? base : base + "_" + i)
                 .filter(operationIds::add)
                 .findFirst()
                 .orElseThrow();
+        if (!unique.equals(base)) {
+            log.warn("The operationId {} is taken. {}#{} renamed to {}. Set @Operation(operationId = ...) to choose a name.",
+                    base, controller.getName(), method.getName(), unique);
+        }
+        return unique;
     }
 
     private static boolean isDocumented(Class<?> controller, Method method) {
