@@ -78,6 +78,7 @@ The workflow needs the repository secrets `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`
 - Jackson 3 defaults of Spring Boot 4: a primitive record component or creator parameter is required. Enum values use `toString()`. `jackson2Defaults` reverts both rules.
 - `JsonNode` from Jackson 2 or 3 and its subtypes, for example `ObjectNode`, become the empty schema `{}`, so any JSON value is valid.
 - `java.time` values that Jackson writes as one value: `YearMonth`, `MonthDay`, `ZoneId`, `ZoneOffset` and `Period` become `type: string`, and `Year` becomes `type: integer`.
+- `@JsonTypeInfo(use = NAME)` with `@JsonSubTypes`: the type names from `@JsonSubTypes.Type` or `@JsonTypeName` become the discriminator `mapping`. An explicit `@Schema(discriminatorMapping = ...)` takes precedence.
 - Jackson 3 annotations: `@JsonNaming` with a standard strategy and `@JsonSerialize(as = ...)` from `tools.jackson.databind.annotation`.
 - Nullability in the type: a nullable Kotlin or JSpecify property or parameter gets `type: [<type>, "null"]`. A nullable reference gets `anyOf` with `$ref` and the null type.
 - Kotlin: a nullable parameter or a parameter with a default value is not required. `suspend` functions work.

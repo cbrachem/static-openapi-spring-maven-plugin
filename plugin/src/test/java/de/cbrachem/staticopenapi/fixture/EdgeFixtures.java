@@ -304,4 +304,45 @@ public final class EdgeFixtures {
             return null;
         }
     }
+
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "kind")
+    @JsonSubTypes({@JsonSubTypes.Type(Cat.class), @JsonSubTypes.Type(Dog.class)})
+    public sealed interface Animal permits Cat, Dog {
+        String getKind();
+    }
+
+    public record Cat(String name) implements Animal {
+        public String getKind() {
+            return "Cat";
+        }
+    }
+
+    @com.fasterxml.jackson.annotation.JsonTypeName("DOG")
+    public record Dog(String name) implements Animal {
+        public String getKind() {
+            return "DOG";
+        }
+    }
+
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+    @JsonSubTypes(@JsonSubTypes.Type(value = Van.class, name = "van"))
+    @Schema(discriminatorProperty = "type",
+            discriminatorMapping = @io.swagger.v3.oas.annotations.media.DiscriminatorMapping(value = "VAN", schema = Van.class))
+    public sealed interface Vehicle permits Van {}
+
+    public record Van(int seats) implements Vehicle {}
+
+    @RestController
+    @RequestMapping("/polymorphic")
+    public static class PolymorphicController {
+        @GetMapping("/animal")
+        public Animal animal() {
+            return null;
+        }
+
+        @GetMapping("/vehicle")
+        public Vehicle vehicle() {
+            return null;
+        }
+    }
 }

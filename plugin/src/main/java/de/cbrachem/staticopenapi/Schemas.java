@@ -76,6 +76,7 @@ final class Schemas {
         converters.addConverter(new KotlinModelConverter());
         converters.addConverter(new NullnessModelConverter(!config.jackson2Defaults()));
         converters.addConverter(new Jackson3Bridge());
+        converters.addConverter(DiscriminatorMapping::resolve);
         converters.addConverter(Schemas::scalarValue);
     }
 

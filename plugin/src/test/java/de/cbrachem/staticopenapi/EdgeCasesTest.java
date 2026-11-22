@@ -85,6 +85,8 @@ class EdgeCasesTest {
 
         assertThat(schemas).containsKeys("Shape", "Circle", "Square");
         assertThat(schemas.get("Shape").getDiscriminator().getPropertyName()).isEqualTo("type");
+        assertThat(schemas.get("Shape").getDiscriminator().getMapping()).containsExactlyInAnyOrderEntriesOf(Map.of(
+                "circle", "#/components/schemas/Circle", "square", "#/components/schemas/Square"));
 
         Schema<?> customer = schemas.get("Customer");
         assertThat(customer.getProperties()).containsOnlyKeys("name", "street", "city");
@@ -169,6 +171,18 @@ class EdgeCasesTest {
         assertThat(time.getPaths().get("/time").getGet().getParameters())
                 .extracting(Parameter::getName, parameter -> parameter.getSchema().getTypes())
                 .containsExactly(tuple("month", Set.of("string")), tuple("from", Set.of("string")));
+    }
+
+    @Test
+    void mapsOnlyDeclaredJacksonTypeNames() {
+        var schemas = OpenApiGenerator.generate(
+                List.of(EdgeFixtures.PolymorphicController.class), new GeneratorConfig("t", "0", null, false))
+                .getComponents().getSchemas();
+
+        assertThat(schemas.get("Animal").getDiscriminator().getMapping())
+                .containsExactlyEntriesOf(Map.of("DOG", "#/components/schemas/Dog"));
+        assertThat(schemas.get("Vehicle").getDiscriminator().getMapping())
+                .containsExactlyEntriesOf(Map.of("VAN", "#/components/schemas/Van"));
     }
 
     @Test
