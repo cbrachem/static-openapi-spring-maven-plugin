@@ -345,4 +345,45 @@ public final class EdgeFixtures {
             return null;
         }
     }
+
+    public static final class First {
+        public record Range(int offset) {}
+    }
+
+    public static final class Second {
+        public record Range(long offset) {}
+    }
+
+    public static final class Third {
+        @Schema(name = "LongRange")
+        public record Range(long offset) {}
+    }
+
+    @RestController
+    @RequestMapping("/ranges")
+    public static class RangeController {
+        @GetMapping("/first")
+        public First.Range first() {
+            return null;
+        }
+
+        @GetMapping("/second")
+        public Second.Range second() {
+            return null;
+        }
+    }
+
+    @RestController
+    @RequestMapping("/named-ranges")
+    public static class NamedRangeController {
+        @GetMapping("/first")
+        public First.Range first() {
+            return null;
+        }
+
+        @GetMapping("/third")
+        public Third.Range third() {
+            return null;
+        }
+    }
 }

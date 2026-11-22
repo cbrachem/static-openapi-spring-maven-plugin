@@ -78,6 +78,7 @@ final class Schemas {
         converters.addConverter(new Jackson3Bridge());
         converters.addConverter(DiscriminatorMapping::resolve);
         converters.addConverter(Schemas::scalarValue);
+        converters.addConverter(new SchemaNameGuard());
     }
 
     // A JsonNode holds any JSON value, and Jackson writes some java.time types as one value.

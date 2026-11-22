@@ -88,6 +88,7 @@ The workflow needs the repository secrets `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`
 ## Limits
 
 - The plugin writes OpenAPI 3.1 only. OpenAPI 3.0 is not available.
+- Schema names are simple class names. When two classes have the same name, the build fails. Set `@Schema(name = ...)` on one of them.
 - `@Conditional`, `@Profile` and routes that the application registers in code are not visible.
 - `ObjectMapper` configuration is not visible. Only annotations on the classes apply.
 - `${...}` placeholders in paths stay as they are.

@@ -65,12 +65,20 @@ final class OperationReader {
                 .forEach(handler -> {
                     var mapping = Mapping.of(typeMapping, handler.getValue());
                     mapping.paths().stream().filter(config::includesPath).forEach(path -> mapping.methods().forEach(httpMethod -> pathItem(path)
-                            .operation(httpMethod, operation(controller, handler.getKey(), mapping))));
+                            .operation(httpMethod, operationOrFail(controller, handler.getKey(), mapping))));
                 });
     }
 
     private PathItem pathItem(String path) {
         return openApi.getPaths().computeIfAbsent(path, key -> new PathItem());
+    }
+
+    private Operation operationOrFail(Class<?> controller, Method method, Mapping mapping) {
+        try {
+            return operation(controller, method, mapping);
+        } catch (GenerationException e) {
+            throw new GenerationException(e.getMessage() + " Found in " + controller.getName() + "#" + method.getName() + ".");
+        }
     }
 
     private Operation operation(Class<?> controller, Method method, Mapping mapping) {

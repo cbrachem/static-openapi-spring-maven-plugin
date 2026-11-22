@@ -13,6 +13,7 @@ import java.util.List;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -93,7 +94,7 @@ public class GenerateMojo extends AbstractMojo {
   private boolean skip;
 
   @Override
-  public void execute() throws MojoExecutionException {
+  public void execute() throws MojoExecutionException, MojoFailureException {
     if (skip) {
       getLog().info("Skip OpenAPI generation.");
       return;
@@ -117,6 +118,8 @@ public class GenerateMojo extends AbstractMojo {
       for (var format : formats) {
         write(format, format.equals("json") ? Json31.pretty(openApi) : Yaml31.pretty(openApi));
       }
+    } catch (GenerationException e) {
+      throw new MojoFailureException(e.getMessage());
     } catch (IOException e) {
       throw new MojoExecutionException("Cannot write the OpenAPI document", e);
     } finally {

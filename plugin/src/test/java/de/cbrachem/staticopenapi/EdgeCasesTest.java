@@ -1,6 +1,7 @@
 package de.cbrachem.staticopenapi;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 
 import de.cbrachem.staticopenapi.fixture.EdgeFixtures;
@@ -183,6 +184,21 @@ class EdgeCasesTest {
                 .containsExactlyEntriesOf(Map.of("DOG", "#/components/schemas/Dog"));
         assertThat(schemas.get("Vehicle").getDiscriminator().getMapping())
                 .containsExactlyEntriesOf(Map.of("VAN", "#/components/schemas/Van"));
+    }
+
+    @Test
+    void failsOnSchemaNameCollision() {
+        assertThatThrownBy(() -> OpenApiGenerator.generate(
+                List.of(EdgeFixtures.RangeController.class), new GeneratorConfig("t", "0", null, false)))
+                .isInstanceOf(GenerationException.class)
+                .hasMessageContaining("\"Range\"")
+                .hasMessageContaining("EdgeFixtures$First$Range")
+                .hasMessageContaining("EdgeFixtures$Second$Range")
+                .hasMessageContaining("RangeController#second");
+
+        var named = OpenApiGenerator.generate(
+                List.of(EdgeFixtures.NamedRangeController.class), new GeneratorConfig("t", "0", null, false));
+        assertThat(named.getComponents().getSchemas()).containsOnlyKeys("Range", "LongRange");
     }
 
     @Test
