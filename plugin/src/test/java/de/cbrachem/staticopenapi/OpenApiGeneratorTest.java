@@ -19,7 +19,8 @@ class OpenApiGeneratorTest {
     @Test
     void resolvesComposedMappingsAndStripsPathPatterns() {
         assertThat(openApi.getPaths().keySet()).containsExactly(
-                "/api/v1/pets", "/api/v1/pets/{id}", "/api/v1/pets/{id}/label", "/api/v1/pets/{id}/photo");
+                "/api/v1/pets", "/api/v1/pets/{id}", "/api/v1/pets/{id}/label",
+                "/api/v1/pets/{id}/mismatched-name", "/api/v1/pets/{id}/photo");
         assertThat(openApi.getInfo().getTitle()).isEqualTo("Pets");
     }
 
@@ -72,6 +73,13 @@ class OpenApiGeneratorTest {
         assertThat(pet.getRequired()).containsExactly("name");
         assertThat(pet.getProperties().get("age")).extracting(Schema::getDescription).isEqualTo("Age in years");
         assertThat(openApi.getTags()).singleElement().extracting("description").isEqualTo("Pet operations");
+    }
+
+    @Test
+    void keepsRealNameOnPathParameterWhenParameterAnnotationNameMismatches() {
+        var mismatched = openApi.getPaths().get("/api/v1/pets/{id}/mismatched-name").getGet();
+        assertThat(mismatched.getParameters()).extracting(Parameter::getName, Parameter::getIn)
+                .containsExactly(tuple("id", "path"));
     }
 
     @Test

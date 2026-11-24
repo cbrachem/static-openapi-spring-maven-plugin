@@ -2,6 +2,7 @@ package de.cbrachem.staticopenapi.fixture;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -158,6 +159,12 @@ public final class Fixtures {
         @Hidden
         @GetMapping("/internal")
         public String internal() {
+            return "";
+        }
+
+        @GetMapping("/{id}/mismatched-name")
+        public String mismatchedName(
+                @PathVariable @Parameter(name = "Pet ID", description = "Identifier of the pet") long id) {
             return "";
         }
     }

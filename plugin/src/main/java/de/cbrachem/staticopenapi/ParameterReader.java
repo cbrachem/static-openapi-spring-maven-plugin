@@ -27,8 +27,12 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ValueConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class ParameterReader {
+
+  private static final Logger log = LoggerFactory.getLogger(ParameterReader.class);
 
   private static final List<String> IGNORED_ANNOTATIONS = List.of(
       "org.springframework.web.bind.annotation.RequestAttribute",
@@ -126,14 +130,24 @@ final class ParameterReader {
   private void add(Operation operation, HandlerParameter parameter, String in, String annotationName,
       boolean annotationRequired, String defaultValue) {
     boolean hasDefault = !ValueConstants.DEFAULT_NONE.equals(defaultValue);
+    var realName = parameter.name(annotationName);
     var base = new Parameter()
         .in(in)
-        .name(parameter.name(annotationName))
+        .name(realName)
         .required(in.equals("path") || annotationRequired && !hasDefault && !parameter.optional());
       var result = ParameterProcessor.applyAnnotations(
               base, parameter.type(), parameter.annotations(), components, new String[0], new String[0], null, true);
       if (result == null) {
         return;
+      }
+      if (in.equals("path") && !realName.equals(result.getName())) {
+        // swagger-core's ParameterProcessor honors an explicit @Parameter(name = ...) verbatim,
+        // even on a path parameter - but OpenAPI 3 requires a path parameter's name to match its
+        // path template segment, so keeping the override here would produce an invalid spec.
+        log.warn("Ignoring @Parameter(name = \"{}\") on path parameter '{}': overriding a path "
+            + "parameter's name would make it mismatch its path template segment.",
+            result.getName(), realName);
+        result.setName(realName);
       }
       if (result.getSchema() != null) {
           var schema = result.getSchema();
